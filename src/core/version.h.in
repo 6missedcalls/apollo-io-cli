@@ -1,0 +1,3 @@
+#pragma once
+
+#define CAPOLLO_VERSION "@PROJECT_VERSION@"

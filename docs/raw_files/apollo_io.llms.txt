@@ -1,0 +1,935 @@
+### Task Title and Note Examples
+
+Source: https://docs.apollo.io/reference/create-a-task
+
+Provides examples for task titles and notes. The title is a concise summary of the task, while the note offers additional context for the task owner. These fields enhance task clarity and actionability.
+
+```text
+Follow up on demo request
+This contact expressed interest in the Sequences feature specifically. Be prepared to discuss.
+```
+
+--------------------------------
+
+### Create Call Task Example (JSON)
+
+Source: https://docs.apollo.io/reference/create-a-task
+
+An example of a JSON payload for creating a 'call' type task. It includes essential fields such as user ID, contact ID, priority, status, due date, title, and a descriptive note.
+
+```json
+{
+  "user_id": "66302798d03b9601c7934ebf",
+  "contact_id": "66e34b81740c50074e3d1bd4",
+  "type": "call",
+  "priority": "high",
+  "status": "scheduled",
+  "due_at": "2025-02-15T10:00:00Z",
+  "title": "Follow-up call",
+  "note": "Discuss product demo results and next steps."
+}
+```
+
+--------------------------------
+
+### Example API Response for Account Update (JSON)
+
+Source: https://docs.apollo.io/reference/update-an-account
+
+This is an example JSON response from the Apollo.io API after updating an account. It includes details like account ID, domain, name, owner, and custom field values.
+
+```json
+{
+  "account": {
+    "id": "66e9abf95ac32901b20d1a0d",
+    "domain": "irishcopywriters.com",
+    "name": "The Fast Irish Copywriters",
+    "team_id": "6095a710bd01d100a506d4ac",
+    "organization_id": null,
+    "account_stage_id": "61b8e913e0f4d2012e3af74e",
+    "source": "api",
+    "original_source": "api",
+    "creator_id": null,
+    "owner_id": "66302798d03b9601c7934ebf",
+    "created_at": "2024-09-17T16:19:05.663Z",
+    "phone": "555-303-8080",
+    "phone_status": "no_status",
+    "hubspot_id": null,
+    "salesforce_id": null,
+    "crm_owner_id": null,
+    "parent_account_id": null,
+    "linkedin_url": null,
+    "sanitized_phone": "+15553038080",
+    "account_playbook_statuses": [],
+    "account_rule_config_statuses": [],
+    "existence_level": "full",
+    "label_ids": [],
+    "custom_field_errors": {},
+    "modality": "account",
+    "source_display_name": "Created from API",
+    "crm_record_url": null,
+    "intent_strength": null,
+    "show_intent": false,
+    "has_intent_signal_account": false,
+    "intent_signal_account": null,
+    "typed_custom_fields": {
+      "60c39ed82bd02f01154c470a": "2025-08-07"
+    }
+  },
+  "labels": []
+}
+```
+
+--------------------------------
+
+### GET /websites/apollo_io
+
+Source: https://docs.apollo.io/reference/get-a-list-of-users
+
+Retrieves website-specific settings and configurations for Apollo.io.
+
+```APIDOC
+## GET /websites/apollo_io
+
+### Description
+Retrieves website-specific settings and configurations for Apollo.io, including assistant settings, chrome extension configurations, and more.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io
+
+### Parameters
+#### Query Parameters
+- **pagination** (object) - Optional - Controls the pagination of the results.
+  - **page** (string) - The page number to retrieve.
+  - **per_page** (string) - The number of items per page.
+
+### Response
+#### Success Response (200)
+- **assistant_setting** (object) - Configuration settings for the Apollo.io assistant.
+- **chrome_extension_enabled_features** (array) - A list of enabled features for the Chrome extension.
+- **chrome_extension_exclude_from_websites** (array) - A list of websites excluded from Chrome extension functionality.
+
+#### Response Example
+```json
+{
+  "assistant_setting": {
+    "_id": "66a3d80d4238fe02d2baaab0",
+    "deal_size_metric": "amount",
+    "inactive_account_stage_ids": [],
+    "inactive_contact_stage_ids": [],
+    "insight_deal_size_signals": {},
+    "insight_sale_cycle_signals": {},
+    "insight_win_rate_signals": {},
+    "is_persona_recommendation_requested": false,
+    "job_posting_locations": [],
+    "job_posting_titles": [],
+    "latest_funding_days": 90,
+    "max_num_active_accounts": 100,
+    "max_people_in_sequence_per_account": 5,
+    "num_inactive_days_to_re_engage": 180,
+    "persona_ids": [
+      "65d829661453d30300a0c9e3",
+      "65e76d7f00d9c601aed49f6c",
+      "65e8bf1f1132a70579a84d61",
+      "65eb62d262c9dc01c66b2675",
+      "66200c046194fa01c707b520",
+      "662057f7d9db7a01c7ba9960"
+    ],
+    "should_show_persona_banner": true,
+    "success_case_account_stage_ids": [],
+    "team_id": "6095a710bd01d100a506d4ac",
+    "technology_uids": [],
+    "territory_company_size_ranges": [],
+    "territory_location_override": false,
+    "territory_locations": [
+      "United States"
+    ],
+    "territory_person_locations": [
+      "United States"
+    ],
+    "user_id": "66a3d80d4238fe02d2baaaaf",
+    "id": "66a3d80d4238fe02d2baaab0",
+    "key": "66a3d80d4238fe02d2baaab0"
+  },
+  "fields_fully_loaded": true,
+  "typed_custom_fields": null,
+  "connected_to_slack": false,
+  "crm_email": null,
+  "triggered_referral_campaigns": [],
+  "enable_click_tracking": true,
+  "enable_open_tracking": true,
+  "should_include_unsubscribe_link": true,
+  "enable_one_click_unsubscribe": null,
+  "subteam_ids": [],
+  "prospect_territory_ids": [],
+  "toggled_on_territory_ids": [],
+  "linked_salesforce": null,
+  "linked_zoom_conference_account": false,
+  "linked_bot_conference_account": true,
+  "linked_bot_conference_account_platforms": [
+    "google_meet",
+    "ms_teams"
+  ],
+  "has_conference_account": true,
+  "linked_hubspot": false,
+  "linked_salesloft": false,
+  "linked_crm_name": null,
+  "chrome_extension_enabled_features": [
+    "apollo_everywhere",
+    "gmail",
+    "linkedin",
+    "salesforce",
+    "hubspot",
+    "google_calendar"
+  ],
+  "chrome_extension_exclude_from_websites": [
+    "facebook.com",
+    "youtube.com",
+    "instagram.com",
+    "google.com",
+    "live.com",
+    "yahoo.com",
+    "notion.so",
+    "atlassian.net",
+    "asana.com",
+    "typeform.com",
+    "figma.com"
+  ],
+  "chrome_extension_everywhere_icon_horizontal_position": "right",
+  "chrome_extension_everywhere_icon_vertical_position_in_vh": 10,
+  "default_chrome_extension_log_email_send_to_salesforce": true,
+  "default_chrome_extension_log_email_send_to_hubspot": true,
+  "chrome_extension_auto_match_salesforce_opportunity": true,
+  "chrome_extension_gmail_enable_email_tools": true,
+  "enable_desktop_notifications": false,
+  "enable_gmail_desktop_notifications": null,
+  "default_chrome_extension_enable_reminders": false,
+  "chrome_extension_gmail_enable_crm_sidebar": true,
+  "show_chrome_extension_buying_intent_promo": true,
+  "apollo_everywhere_search_count": 0
+}
+```
+```
+
+--------------------------------
+
+### Apollo.io API 429 Too Many Requests Error Example
+
+Source: https://docs.apollo.io/reference/bulk-create-contacts
+
+This example shows the response for a 429 Too Many Requests error, indicating that the API rate limit has been exceeded. It provides information on the limit and a link to upgrade the plan.
+
+```json
+{
+  "message": "The maximum number of api calls allowed for api/v1/contacts/bulk_create is 600 times per hour. Please upgrade your plan from https://app.apollo.io/#/settings/plans/upgrade."
+}
+```
+
+--------------------------------
+
+### GET /websites/apollo_io
+
+Source: https://docs.apollo.io/reference/list-all-deals
+
+Retrieves detailed information for the Apollo.io website.
+
+```APIDOC
+## GET /websites/apollo_io
+
+### Description
+Retrieves detailed information for the Apollo.io website, including social media URLs, contact details, and organizational data.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io
+
+### Parameters
+#### Path Parameters
+None
+
+#### Query Parameters
+None
+
+#### Request Body
+None
+
+### Request Example
+None
+
+### Response
+#### Success Response (200)
+- **linkedin_url** (string) - The LinkedIn company URL.
+- **twitter_url** (string) - The Twitter profile URL.
+- **facebook_url** (string) - The Facebook page URL.
+- **primary_phone** (object) - Primary phone number details.
+  - **number** (string) - The full phone number.
+  - **source** (string) - The source of the phone number information.
+  - **sanitized_number** (string) - The phone number without formatting.
+- **languages** (array) - A list of languages spoken by the organization.
+- **alexa_ranking** (integer) - The Alexa ranking of the website.
+- **phone** (string) - The primary phone number.
+- **linkedin_uid** (string) - The LinkedIn unique identifier.
+- **founded_year** (integer) - The year the organization was founded.
+- **publicly_traded_exchange** (string) - The stock exchange where the company is publicly traded.
+- **logo_url** (string) - The URL of the company logo.
+- **primary_domain** (string) - The primary domain name of the website.
+- **sanitized_phone** (string) - The sanitized primary phone number.
+- **domain** (string) - The domain name of the website.
+- **team_id** (string) - The internal team ID.
+- **organization_id** (string) - The internal organization ID.
+- **account_stage_id** (string) - The internal account stage ID.
+- **source** (string) - The source of the data.
+- **original_source** (string) - The original source of the data.
+- **created_at** (string) - The timestamp when the record was created.
+- **phone_status** (string) - The status of the phone number verification.
+
+#### Response Example
+```json
+{
+  "linkedin_url": "http://www.linkedin.com/company/nasa",
+  "twitter_url": "https://twitter.com/NASA",
+  "facebook_url": "http://www.facebook.com/NASAJPL",
+  "primary_phone": {
+    "number": "+1 202-358-0001",
+    "source": "Owler",
+    "sanitized_number": "+12023580001"
+  },
+  "languages": [
+    "English"
+  ],
+  "alexa_ranking": 1751,
+  "phone": "+1 202-358-0001",
+  "linkedin_uid": "2003",
+  "founded_year": 1958,
+  "publicly_traded_exchange": "nyse",
+  "logo_url": "https://zenprospect-production.s3.amazonaws.com/uploads/pictures/66e521710fa7de0001c8b9e3/picture",
+  "primary_domain": "nasa.gov",
+  "sanitized_phone": "+12023580001",
+  "domain": "nasa.gov",
+  "team_id": "6095a710bd01d100a506d4ac",
+  "organization_id": "55e16cfbf3e5bb66cf0026f3",
+  "account_stage_id": "6095a710bd01d100a506d4b9",
+  "source": "deployment",
+  "original_source": "deployment",
+  "created_at": "2021-05-27T20:24:12.644Z",
+  "phone_status": "valid"
+}
+```
+```
+
+--------------------------------
+
+### API Endpoint Documentation
+
+Source: https://docs.apollo.io/reference/create-a-custom-field
+
+This section details a specific API endpoint, including its method, path, parameters, and example requests/responses.
+
+```APIDOC
+## GET /api/v1/fields
+
+### Description
+This endpoint retrieves a list of available fields for data retrieval.
+
+### Method
+GET
+
+### Endpoint
+/api/v1/fields
+
+### Parameters
+#### Query Parameters
+- **api_key** (string) - Required - Your Apollo.io API key.
+
+### Request Example
+```json
+{
+  "api_key": "YOUR_API_KEY"
+}
+```
+
+### Response
+#### Success Response (200)
+- **fields** (object) - An object containing available fields and their properties.
+
+#### Response Example
+```json
+{
+  "fields": {
+    "example_field_1": {
+      "type": "string",
+      "description": "This is an example field."
+    },
+    "example_field_2": {
+      "type": "integer",
+      "description": "Another example field."
+    }
+  }
+}
+```
+
+#### Error Response (403)
+- **error** (string) - Description of the error.
+- **error_code** (string) - A code representing the error.
+
+#### Response Example
+```json
+{
+  "error": "api/v1/fields this api_key",
+  "error_code": "API_INACCESSIBLE"
+}
+```
+```
+
+--------------------------------
+
+### GET /websites/apollo_io
+
+Source: https://docs.apollo.io/reference/bulk-create-tasks
+
+Retrieves information about websites associated with Apollo.io, including details about their accounts, currency, and other relevant properties.
+
+```APIDOC
+## GET /websites/apollo_io
+
+### Description
+Retrieves information about websites associated with Apollo.io, including details about their accounts, currency, and other relevant properties.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io
+
+### Parameters
+#### Query Parameters
+- **fields** (string) - Optional - Comma-separated list of fields to include in the response.
+- **filter** (string) - Optional - Filtering criteria for the results.
+- **sort** (string) - Optional - Sorting order for the results.
+- **page** (integer) - Optional - Page number for pagination.
+- **limit** (integer) - Optional - Number of results per page.
+
+### Request Example
+```json
+{
+  "example": ""
+}
+```
+
+### Response
+#### Success Response (200)
+- **id** (string) - The unique identifier of the website.
+- **name** (string) - The name of the website.
+- **url** (string) - The URL of the website.
+- **account** (object) - Details about the associated account.
+  - **id** (string) - The unique identifier of the account.
+  - **domain** (string) - The domain name of the account.
+  - **name** (string) - The name of the account.
+  - **team_id** (string) - The ID of the team the account belongs to.
+  - **organization_id** (string) - The ID of the organization the account belongs to.
+  - **account_stage_id** (string) - The ID of the account stage.
+  - **source** (string) - The source of the account data.
+  - **original_source** (string) - The original source of the account data.
+  - **created_at** (string) - The timestamp when the account was created.
+- **currency** (object) - Details about the account's currency.
+  - **name** (string) - The name of the currency.
+  - **iso_code** (string) - The ISO code of the currency.
+  - **symbol** (string) - The symbol of the currency.
+
+#### Response Example
+```json
+{
+  "example": "{\n  \"id\": \"64288550ffb0470001cbf2b0\",\n  \"name\": \"Example Website\",\n  \"url\": \"https://example.com\",\n  \"account\": {\n    \"id\": \"612f9d6cd26c290001d9bda0\",\n    \"domain\": \"google.com\",\n    \"name\": \"Google\",\n    \"team_id\": \"6095a710bd01d100a506d4ac\",\n    \"organization_id\": \"5fc93db64c38d300d6aa24e6\",\n    \"account_stage_id\": \"6095a710bd01d100a506d4b9\",\n    \"source\": \"csv_import\",\n    \"original_source\": \"csv_import\",\n    \"created_at\": \"2021-09-01T15:34:04.371Z\"\n  },\n  \"currency\": {\n    \"name\": \"US Dollar\",\n    \"iso_code\": \"USD\",\n    \"symbol\": \"$\"\n  }\n}"
+}
+```
+```
+
+--------------------------------
+
+### GET /opportunities/search
+
+Source: https://docs.apollo.io/reference/list-all-deals
+
+Retrieves a list of all deals created for your team's Apollo account. This endpoint requires a master API key for access.
+
+```APIDOC
+## GET /opportunities/search
+
+### Description
+Use the List All Deals endpoint to retrieve every deal that has been created for your team's Apollo account. This endpoint also requires a master API key. If you attempt to call the endpoint without a master key, you will receive a `403` response. Refer to [Create API Keys](https://docs.apollo.io/docs/create-api-key) to learn how to create a master API key.
+
+### Method
+GET
+
+### Endpoint
+https://api.apollo.io/api/v1/opportunities/search
+
+### Parameters
+#### Query Parameters
+- **sort_by_field** (string) - Optional - Sort the tasks by 1 of the following options: `amount`, `is_closed`, `is_won`.
+- **page** (integer) - Optional - The page number of the Apollo data that you want to retrieve. Use this parameter in combination with the `per_page` parameter to make search results for navigable and improve the performance of the endpoint. Example: `4`
+- **per_page** (integer) - Optional - The number of search results that should be returned for each page. Limiting the number of results per page improves the endpoint's performance. Use the `page` parameter to search the different pages of data. Example: `10`
+
+### Request Example
+```json
+{
+  "example": "No request body for GET request"
+}
+```
+
+### Response
+#### Success Response (200)
+- **opportunities** (array) - A list of deal objects.
+- **total_count** (integer) - The total number of deals found.
+
+#### Response Example
+```json
+{
+  "opportunities": [
+    {
+      "id": 12345,
+      "name": "Example Deal",
+      "amount": 10000,
+      "is_closed": false,
+      "is_won": false,
+      "created_at": "2023-10-27T10:00:00Z",
+      "updated_at": "2023-10-27T10:00:00Z"
+    }
+  ],
+  "total_count": 50
+}
+```
+```
+
+--------------------------------
+
+### Apollo.io API 401 Unauthorized Error Example
+
+Source: https://docs.apollo.io/reference/update-account-ownership
+
+This snippet shows an example of a 401 Unauthorized error response from the Apollo.io API. It indicates that the provided API key is invalid or lacks the necessary permissions to access the requested resource. The response includes an error message and an error code.
+
+```json
+{
+  "error": "api/v1/users/search is not accessible with this api_key",
+  "error_code": "API_INACCESSIBLE"
+}
+```
+
+--------------------------------
+
+### GET /websites/apollo_io/labels
+
+Source: https://docs.apollo.io/reference/create-a-contact
+
+Retrieves a list of all available labels that can be applied to contacts.
+
+```APIDOC
+## GET /websites/apollo_io/labels
+
+### Description
+Retrieves a list of all available labels that can be applied to contacts.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io/labels
+
+### Parameters
+#### Query Parameters
+- **modality** (string) - Optional - Filters labels by modality (e.g., 'contacts').
+
+### Request Example
+```json
+{
+  "example": "GET /websites/apollo_io/labels?modality=contacts"
+}
+```
+
+### Response
+#### Success Response (200)
+- **id** (string) - The unique identifier of the label.
+- **modality** (string) - The type of entity the label applies to.
+- **cached_count** (integer) - The number of items associated with this label.
+- **name** (string) - The name of the label.
+- **created_at** (string) - Timestamp when the label was created.
+- **updated_at** (string) - Timestamp when the label was last updated.
+- **user_id** (string) - The ID of the user who created the label.
+
+#### Response Example
+```json
+[
+  {
+    "id": "66e34b81740c50074e3d1bd2",
+    "modality": "contacts",
+    "cached_count": 0,
+    "name": "typewriter",
+    "created_at": "2024-09-12T20:13:53.119Z",
+    "updated_at": "2024-09-12T20:13:53.279Z",
+    "user_id": "60affe7d6e270a00f5db6fe4"
+  },
+  {
+    "id": "66e34b81740c50074e3d1bd1",
+    "modality": "contacts",
+    "cached_count": 0,
+    "name": "fiction",
+    "created_at": "2024-09-12T20:13:53.107Z",
+    "updated_at": "2024-09-12T20:13:53.258Z",
+    "user_id": "60affe7d6e270a00f5db6fe4"
+  },
+  {
+    "id": "66e34b81740c50074e3d1bd0",
+    "modality": "contacts",
+    "cached_count": 0,
+    "name": "writer",
+    "created_at": "2024-09-12T20:13:53.093Z",
+    "updated_at": "2024-09-12T20:13:53.308Z",
+    "user_id": "60affe7d6e270a00f5db6fe4"
+  },
+  {
+    "id": "66e34b81740c50074e3d1bd3",
+    "modality": "contacts",
+    "cached_count": 0,
+    "name": "microsoft word",
+    "created_at": "2024-09-12T20:13:53.132Z",
+    "updated_at": "2024-09-12T20:13:53.313Z",
+    "user_id": "60affe7d6e270a00f5db6fe4"
+  }
+]
+```
+```
+
+--------------------------------
+
+### Apollo.io API 429 Too Many Requests Error Example
+
+Source: https://docs.apollo.io/reference/update-account-ownership
+
+This example illustrates a 429 Too Many Requests error. It signifies that the client has exceeded the allowed number of API calls within a given time frame, often an hour. The response includes a message detailing the rate limit and a suggestion to upgrade the plan.
+
+```json
+{
+    "message": "The maximum number of api calls allowed for api/v1/accounts/update_owners is 600 times per hour. Please upgrade your plan from https://app.apollo.io/#/settings/plans/upgrade."
+}
+```
+
+--------------------------------
+
+### GET /websites/apollo_io
+
+Source: https://docs.apollo.io/reference/organization-enrichment
+
+Retrieves detailed information about the Apollo.io website, including company profile, location, financial data, and descriptions.
+
+```APIDOC
+## GET /websites/apollo_io
+
+### Description
+Retrieves detailed information about the Apollo.io website, including company profile, location, financial data, and descriptions.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io
+
+### Parameters
+#### Path Parameters
+None
+
+#### Query Parameters
+None
+
+#### Request Body
+None
+
+### Request Example
+None
+
+### Response
+#### Success Response (200)
+- **id** (string) - The unique identifier for the website.
+- **name** (string) - The name of the company associated with the website.
+- **domain** (string) - The domain name of the website.
+- **url** (string) - The full URL of the website.
+- **logo_url** (string) - The URL of the company's logo.
+- **industry** (string) - The industry in which the company operates.
+- **industry_id** (integer) - The identifier for the industry.
+- **company_size** (string) - The size of the company (e.g., '1001-5000 employees').
+- **company_id** (string) - The unique identifier for the company.
+- **employee_count** (integer) - The number of employees.
+- **location_text** (string) - A formatted string representing the company's location.
+- **primary_location** (object) - Details about the primary location.
+  - **city** (string) - The city of the primary location.
+  - **state** (string) - The state of the primary location.
+  - **country** (string) - The country of the primary location.
+  - **postal_code** (string) - The postal code of the primary location.
+  - **street_address** (string) - The street address of the primary location.
+  - **raw_address** (string) - The raw address string.
+- **current_employee_count** (integer) - The current number of employees.
+- **current_company_size** (string) - The current size of the company.
+- **founded_year** (integer) - The year the company was founded.
+- **description** (string) - A detailed description of the company.
+- **website_url** (string) - The primary website URL.
+- **linkedin_url** (string) - The LinkedIn profile URL of the company.
+- **twitter_url** (string) - The Twitter profile URL of the company.
+- **facebook_url** (string) - The Facebook profile URL of the company.
+- **universal_domain_words** (array) - An array of words from the universal domain.
+- **tags** (object) - Tags associated with the company.
+  - **list** (array) - A list of tags.
+- **funding_data** (object) - Funding information for the company.
+  - **total_funding** (integer) - The total amount of funding received.
+  - **total_funding_printed** (string) - The total funding amount formatted as a string.
+  - **latest_funding_round_date** (string) - The date of the latest funding round.
+  - **latest_funding_stage** (string) - The stage of the latest funding round.
+  - **funding_events** (array) - A list of funding events.
+    - **id** (string) - The ID of the funding event.
+    - **date** (string) - The date of the funding event.
+    - **news_url** (string) - The URL of the news related to the funding event.
+    - **type** (string) - The type of the funding event.
+    - **investors** (string) - The investors in the funding event.
+    - **amount** (string) - The amount raised in the funding event.
+    - **currency** (string) - The currency of the funding amount.
+- **annual_revenue** (integer) - The annual revenue of the company.
+- **annual_revenue_printed** (string) - The annual revenue formatted as a string.
+- **retail_location_count** (integer) - The number of retail locations.
+- **raw_address** (string) - The raw address string of the company.
+- **street_address** (string) - The street address of the company.
+- **city** (string) - The city of the company's location.
+- **state** (string) - The state of the company's location.
+- **postal_code** (string) - The postal code of the company's location.
+- **country** (string) - The country of the company's location.
+- **owned_by_organization_id** (any) - The ID of the organization that owns this entity.
+- **seo_description** (string) - The SEO description for the company.
+- **short_description** (string) - A short description of the company.
+- **suborganizations** (array) - A list of sub-organizations.
+- **num_suborganizations** (integer) - The number of sub-organizations.
+
+#### Response Example
+```json
+{
+  "id": "60a7b3b3a1b2c3d4e5f6a7b8",
+  "name": "Apollo.io",
+  "domain": "apollo.io",
+  "url": "https://www.apollo.io/",
+  "logo_url": "https://logo.clearbit.com/apollo.io",
+  "industry": "Software",
+  "industry_id": 123,
+  "company_size": "1001-5000 employees",
+  "company_id": "comp_12345",
+  "employee_count": 1500,
+  "location_text": "San Francisco, California, United States",
+  "primary_location": {
+    "city": "San Francisco",
+    "state": "California",
+    "country": "United States",
+    "postal_code": "94105",
+    "street_address": "415 Mission St",
+    "raw_address": "415 Mission St, San Francisco, California 94105, US"
+  },
+  "current_employee_count": 1500,
+  "current_company_size": "1001-5000 employees",
+  "founded_year": 2017,
+  "description": "Apollo.io is a leading sales intelligence and engagement platform...",
+  "website_url": "https://www.apollo.io/",
+  "linkedin_url": "https://www.linkedin.com/company/apollo-io",
+  "twitter_url": "https://twitter.com/apollo_io",
+  "facebook_url": null,
+  "universal_domain_words": ["apollo", "io"],
+  "tags": {
+    "list": ["SaaS", "Sales", "Marketing"]
+  },
+  "funding_data": {
+    "total_funding": 251200000,
+    "total_funding_printed": "251.2M",
+    "latest_funding_round_date": "2023-08-01T00:00:00.000+00:00",
+    "latest_funding_stage": "Series D",
+    "funding_events": [
+      {
+        "id": "6574c1ff9b797d0001fdab1b",
+        "date": "2023-08-01T00:00:00.000+00:00",
+        "news_url": null,
+        "type": "Series D",
+        "investors": "Bain Capital Ventures, Sequoia Capital, Tribe Capital, Nexus Venture Partners",
+        "amount": "100M",
+        "currency": "USD"
+      }
+    ]
+  },
+  "annual_revenue": 100000000,
+  "annual_revenue_printed": "100M",
+  "retail_location_count": 0,
+  "raw_address": "415 Mission St, Floor 37, San Francisco, California 94105, US",
+  "street_address": "415 Mission St",
+  "city": "San Francisco",
+  "state": "California",
+  "postal_code": "94105-2301",
+  "country": "United States",
+  "owned_by_organization_id": null,
+  "seo_description": "Search, engage, and convert over 275 million contacts at over 73 million companies with Apollo's sales intelligence and engagement platform.",
+  "short_description": "Apollo.io combines a buyer database of over 270M contacts and powerful sales engagement and automation tools in one, easy to use platform...",
+  "suborganizations": [],
+  "num_suborganizations": 0
+}
+```
+```
+
+--------------------------------
+
+### GET /api/v1/account_stages
+
+Source: https://docs.apollo.io/reference/list-account-stages
+
+Retrieves a list of all account stages associated with your team. This endpoint is useful for understanding the available stages and their configurations.
+
+```APIDOC
+## GET /api/v1/account_stages
+
+### Description
+Retrieves a list of all account stages associated with your team. This endpoint is useful for understanding the available stages and their configurations.
+
+### Method
+GET
+
+### Endpoint
+/api/v1/account_stages
+
+### Parameters
+#### Query Parameters
+- **team_id** (string) - Required - The ID of the team whose account stages you want to retrieve.
+
+### Request Example
+```json
+{
+  "team_id": "6095a710bd01d100a506d4ac"
+}
+```
+
+### Response
+#### Success Response (200)
+- **account_stages** (array) - An array of account stage objects.
+  - **id** (string) - The unique identifier for the account stage.
+  - **team_id** (string) - The ID of the team the account stage belongs to.
+  - **display_name** (string) - The name of the account stage as displayed in the UI.
+  - **name** (string) - The internal name of the account stage.
+  - **display_order** (integer) - The order in which the stage should be displayed.
+  - **default_exclude_for_leadgen** (boolean) - Indicates if this stage is excluded by default for lead generation.
+  - **category** (any) - The category of the account stage (can be null).
+  - **is_meeting_set** (any) - Indicates if a meeting is set for this stage (can be null).
+
+#### Response Example
+```json
+{
+  "account_stages": [
+    {
+      "id": "6095a710bd01d100a506d4b7",
+      "team_id": "6095a710bd01d100a506d4ac",
+      "display_name": "Review",
+      "name": "Review",
+      "display_order": 1,
+      "default_exclude_for_leadgen": false,
+      "category": null,
+      "is_meeting_set": null
+    },
+    {
+      "id": "6095a710bd01d100a506d4b8",
+      "team_id": "6095a710bd01d100a506d4ac",
+      "display_name": "Evangelist",
+      "name": "Evangelist",
+      "display_order": 10,
+      "default_exclude_for_leadgen": false,
+      "category": null,
+      "is_meeting_set": null
+    },
+    {
+      "id": "61b8e913e0f4d2012e3af756",
+      "team_id": "6095a710bd01d100a506d4ac",
+      "display_name": "Other",
+      "name": "Other",
+      "display_order": 11,
+      "default_exclude_for_leadgen": false,
+      "category": null,
+      "is_meeting_set": null
+    }
+  ]
+}
+```
+
+### Error Handling
+- **401 Unauthorized**: Returned if the API key is invalid or missing.
+- **403 Forbidden**: Returned if the API key does not have the necessary permissions to access this endpoint.
+- **429 Too Many Requests**: Returned if the rate limit for API calls is exceeded.
+```
+
+--------------------------------
+
+### Get a List of Fields
+
+Source: https://docs.apollo.io/reference/get-a-list-of-fields
+
+Retrieves information about all fields present in your Apollo account. This endpoint mandates the use of a master API key for successful execution.
+
+```APIDOC
+## GET /websites/apollo_io/fields
+
+### Description
+Use the Get a List of Fields endpoint to retrieve information about all of the fields that exist in your Apollo account. This endpoint requires a master API key. If you attempt to call the endpoint without a master key, you will receive a `403` response. Refer to <a href="https://docs.apollo.io/docs/create-api-key" target="_blank">Create API Keys</a> to learn how to create a master API key.
+
+### Method
+GET
+
+### Endpoint
+/websites/apollo_io/fields
+
+### Parameters
+#### Query Parameters
+- **api_key** (string) - Required - Your master API key.
+
+### Request Example
+```json
+{
+  "api_key": "YOUR_MASTER_API_KEY"
+}
+```
+
+### Response
+#### Success Response (200)
+- **fields** (array) - A list of field objects, each containing details about a specific field.
+  - **id** (string) - The unique identifier for the field.
+  - **name** (string) - The name of the field.
+  - **type** (string) - The data type of the field.
+
+#### Response Example
+```json
+{
+  "fields": [
+    {
+      "id": "field_123",
+      "name": "Industry",
+      "type": "dropdown"
+    },
+    {
+      "id": "field_456",
+      "name": "Company Size",
+      "type": "number"
+    }
+  ]
+}
+```
+
+#### Error Response (403)
+- **error** (string) - Indicates that a master API key is required.
+
+#### Error Response Example
+```json
+{
+  "error": "Master API key is required to access this endpoint."
+}
+```
+```
