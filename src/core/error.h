@@ -2,14 +2,13 @@
 
 #include <chrono>
 #include <optional>
-#include <regex>
 #include <stdexcept>
 #include <string>
 #include <thread>
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+#include "core/output.h"
 
 enum class ErrorKind {
     Network,
@@ -43,7 +42,7 @@ private:
 void check_http_status(long status_code, const std::string& response_body);
 
 // Check parsed JSON response for error fields
-void check_rest_errors(const json& response);
+void check_rest_errors(const nlohmann::json& response);
 
 // Retry wrapper for rate-limited requests
 // F must be callable returning some type T
@@ -61,6 +60,7 @@ auto with_retry(F&& fn, int max_retries = 3) -> decltype(fn()) {
             }
             int wait_seconds = e.retry_after().value_or(1 << attempt);
             std::this_thread::sleep_for(std::chrono::seconds(wait_seconds));
+            print_verbose("retrying (" + std::to_string(attempt + 1) + "/" + std::to_string(max_retries) + ") after " + std::to_string(wait_seconds) + "s");
         }
     }
     throw ApolloError(ErrorKind::Internal, "Retry loop exited unexpectedly");

@@ -4,8 +4,8 @@
 #include <utility>
 #include <vector>
 
-#include "../../core/error.h"
-#include "../../core/rest_client.h"
+#include "core/error.h"
+#include "core/rest_client.h"
 
 using json = nlohmann::json;
 

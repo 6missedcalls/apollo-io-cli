@@ -1,4 +1,4 @@
-#include "color.h"
+#include "core/color.h"
 
 #include <cstdlib>
 #include <sstream>

@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct Task {
     std::string id;
     std::optional<std::string> user_id;
@@ -21,7 +19,7 @@ struct Task {
     std::string updated_at;
 };
 
-inline void from_json(const json& j, Task& t) {
+inline void from_json(const nlohmann::json& j, Task& t) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -55,8 +53,8 @@ struct TaskCreateInput {
     std::optional<std::string> note;
 };
 
-inline json to_json_body(const TaskCreateInput& input) {
-    json body = json::object();
+inline nlohmann::json to_json_body(const TaskCreateInput& input) {
+    nlohmann::json body = nlohmann::json::object();
 
     body["user_id"] = input.user_id;
     body["contact_id"] = input.contact_id;

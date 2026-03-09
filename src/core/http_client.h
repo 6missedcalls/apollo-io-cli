@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include <curl/curl.h>
+
 struct HttpResponse {
     long status_code = 0;
     std::string body;
@@ -52,6 +54,6 @@ private:
         const std::string& body,
         const std::vector<std::pair<std::string, std::string>>& headers);
 
-    void* curl_handle_ = nullptr;
+    CURL* curl_handle_ = nullptr;
     long timeout_seconds_ = 30;
 };

@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct CustomField {
     std::string id;
     std::string name;
@@ -18,7 +16,7 @@ struct CustomField {
     std::vector<std::string> picklist_values;
 };
 
-inline void from_json(const json& j, CustomField& f) {
+inline void from_json(const nlohmann::json& j, CustomField& f) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

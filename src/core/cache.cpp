@@ -10,6 +10,32 @@
 
 namespace cache {
 
+namespace {
+
+struct StmtGuard {
+    sqlite3_stmt* stmt = nullptr;
+    ~StmtGuard() { if (stmt) sqlite3_finalize(stmt); }
+};
+
+struct TransactionGuard {
+    sqlite3* db;
+    bool committed = false;
+    explicit TransactionGuard(sqlite3* db) : db(db) {
+        sqlite3_exec(db, "BEGIN TRANSACTION", nullptr, nullptr, nullptr);
+    }
+    void commit() {
+        sqlite3_exec(db, "COMMIT", nullptr, nullptr, nullptr);
+        committed = true;
+    }
+    ~TransactionGuard() {
+        if (!committed) {
+            sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+        }
+    }
+};
+
+} // namespace
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -25,7 +51,10 @@ static std::string col_text(sqlite3_stmt* stmt, int col) {
 
 std::string cache_path() {
     const char* home = std::getenv("HOME");
-    std::string dir = std::string(home ? home : ".") + "/.config/capollo";
+    if (home == nullptr) {
+        throw std::runtime_error("HOME environment variable is not set");
+    }
+    std::string dir = std::string(home) + "/.config/apollo";
     std::filesystem::create_directories(dir);
     return dir + "/cache.db";
 }
@@ -152,16 +181,15 @@ void Cache::update_timestamp(const std::string& table) {
     auto now = std::chrono::system_clock::to_time_t(
         std::chrono::system_clock::now());
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "INSERT OR REPLACE INTO cache_meta (table_name, updated_at) VALUES (?, ?)",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int64(stmt, 2, static_cast<sqlite3_int64>(now));
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    sqlite3_bind_text(guard.stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(guard.stmt, 2, static_cast<sqlite3_int64>(now));
+    sqlite3_step(guard.stmt);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,17 +205,16 @@ bool Cache::is_open() const {
 // ---------------------------------------------------------------------------
 
 bool Cache::is_stale(const std::string& table, int max_age_minutes) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT updated_at FROM cache_meta WHERE table_name = ?",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
 
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        sqlite3_int64 updated = sqlite3_column_int64(stmt, 0);
-        sqlite3_finalize(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        sqlite3_int64 updated = sqlite3_column_int64(guard.stmt, 0);
 
         auto now = std::chrono::system_clock::now();
         auto updated_time = std::chrono::system_clock::from_time_t(
@@ -198,20 +225,18 @@ bool Cache::is_stale(const std::string& table, int max_age_minutes) {
         return age.count() >= max_age_minutes;
     }
 
-    sqlite3_finalize(stmt);
     return true;  // No record means stale
 }
 
 void Cache::invalidate(const std::string& table) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "DELETE FROM cache_meta WHERE table_name = ?",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_step(stmt);
-    sqlite3_finalize(stmt);
+    sqlite3_bind_text(guard.stmt, 1, table.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_step(guard.stmt);
 }
 
 void Cache::invalidate_all() {
@@ -223,28 +248,27 @@ void Cache::invalidate_all() {
 // ---------------------------------------------------------------------------
 
 void Cache::store_users(const std::vector<CachedUser>& users) {
-    exec("BEGIN TRANSACTION");
+    TransactionGuard txn(db_);
     exec("DELETE FROM users");
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "INSERT INTO users (id, name, email) VALUES (?, ?, ?)",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
 
     for (const auto& u : users) {
-        sqlite3_bind_text(stmt, 1, u.id.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 2, u.name.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, u.email.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 1, u.id.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 2, u.name.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 3, u.email.c_str(), -1, SQLITE_TRANSIENT);
 
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
+        sqlite3_step(guard.stmt);
+        sqlite3_reset(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     update_timestamp("users");
-    exec("COMMIT");
+    txn.commit();
 }
 
 static CachedUser row_to_user(sqlite3_stmt* stmt) {
@@ -258,54 +282,68 @@ static CachedUser row_to_user(sqlite3_stmt* stmt) {
 std::vector<CachedUser> Cache::get_users() {
     std::vector<CachedUser> result;
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, email FROM users ORDER BY name",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        result.push_back(row_to_user(stmt));
+    while (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result.push_back(row_to_user(guard.stmt));
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 
 std::optional<CachedUser> Cache::find_user_by_name(const std::string& name) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, email FROM users WHERE name = ? COLLATE NOCASE",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
 
     std::optional<CachedUser> result;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = row_to_user(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_user(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 
 std::optional<CachedUser> Cache::find_user_by_email(const std::string& email) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, email FROM users WHERE email = ? COLLATE NOCASE",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, email.c_str(), -1, SQLITE_TRANSIENT);
 
     std::optional<CachedUser> result;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = row_to_user(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_user(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
+    return result;
+}
+
+std::optional<CachedUser> Cache::find_user_by_id(const std::string& id) {
+    StmtGuard guard;
+    sqlite3_prepare_v2(
+        db_,
+        "SELECT id, name, email FROM users WHERE id = ?",
+        -1, &guard.stmt, nullptr
+    );
+    sqlite3_bind_text(guard.stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+
+    std::optional<CachedUser> result;
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_user(guard.stmt);
+    }
+
     return result;
 }
 
@@ -315,39 +353,39 @@ std::optional<CachedUser> Cache::find_user_by_email(const std::string& email) {
 
 void Cache::store_stages(const std::vector<CachedStage>& stages,
                          const std::string& type) {
-    exec("BEGIN TRANSACTION");
+    TransactionGuard txn(db_);
 
     // Delete only stages of this type
-    sqlite3_stmt* del_stmt = nullptr;
-    sqlite3_prepare_v2(
-        db_,
-        "DELETE FROM stages WHERE type = ?",
-        -1, &del_stmt, nullptr
-    );
-    sqlite3_bind_text(del_stmt, 1, type.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_step(del_stmt);
-    sqlite3_finalize(del_stmt);
+    {
+        StmtGuard del_guard;
+        sqlite3_prepare_v2(
+            db_,
+            "DELETE FROM stages WHERE type = ?",
+            -1, &del_guard.stmt, nullptr
+        );
+        sqlite3_bind_text(del_guard.stmt, 1, type.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_step(del_guard.stmt);
+    }
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "INSERT INTO stages (id, name, type, display_order) VALUES (?, ?, ?, ?)",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
 
     for (const auto& s : stages) {
-        sqlite3_bind_text(stmt, 1, s.id.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 2, s.name.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, s.type.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_int(stmt, 4, s.display_order);
+        sqlite3_bind_text(guard.stmt, 1, s.id.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 2, s.name.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 3, s.type.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(guard.stmt, 4, s.display_order);
 
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
+        sqlite3_step(guard.stmt);
+        sqlite3_reset(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     update_timestamp("stages_" + type);
-    exec("COMMIT");
+    txn.commit();
 }
 
 static CachedStage row_to_stage(sqlite3_stmt* stmt) {
@@ -362,41 +400,56 @@ static CachedStage row_to_stage(sqlite3_stmt* stmt) {
 std::vector<CachedStage> Cache::get_stages(const std::string& type) {
     std::vector<CachedStage> result;
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, type, display_order FROM stages "
         "WHERE type = ? ORDER BY display_order",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, type.c_str(), -1, SQLITE_TRANSIENT);
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        result.push_back(row_to_stage(stmt));
+    while (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result.push_back(row_to_stage(guard.stmt));
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 
 std::optional<CachedStage> Cache::find_stage_by_name(
     const std::string& name, const std::string& type) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, type, display_order FROM stages "
         "WHERE name = ? COLLATE NOCASE AND type = ?",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 2, type.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 2, type.c_str(), -1, SQLITE_TRANSIENT);
 
     std::optional<CachedStage> result;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = row_to_stage(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_stage(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
+    return result;
+}
+
+std::optional<CachedStage> Cache::find_stage_by_id(const std::string& id) {
+    StmtGuard guard;
+    sqlite3_prepare_v2(
+        db_,
+        "SELECT id, name, type, display_order FROM stages WHERE id = ?",
+        -1, &guard.stmt, nullptr
+    );
+    sqlite3_bind_text(guard.stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+
+    std::optional<CachedStage> result;
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_stage(guard.stmt);
+    }
+
     return result;
 }
 
@@ -405,28 +458,27 @@ std::optional<CachedStage> Cache::find_stage_by_name(
 // ---------------------------------------------------------------------------
 
 void Cache::store_labels(const std::vector<CachedLabel>& labels) {
-    exec("BEGIN TRANSACTION");
+    TransactionGuard txn(db_);
     exec("DELETE FROM labels");
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "INSERT INTO labels (id, name, modality) VALUES (?, ?, ?)",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
 
     for (const auto& l : labels) {
-        sqlite3_bind_text(stmt, 1, l.id.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 2, l.name.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, l.modality.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 1, l.id.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 2, l.name.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 3, l.modality.c_str(), -1, SQLITE_TRANSIENT);
 
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
+        sqlite3_step(guard.stmt);
+        sqlite3_reset(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     update_timestamp("labels");
-    exec("COMMIT");
+    txn.commit();
 }
 
 static CachedLabel row_to_label(sqlite3_stmt* stmt) {
@@ -440,47 +492,62 @@ static CachedLabel row_to_label(sqlite3_stmt* stmt) {
 std::vector<CachedLabel> Cache::get_labels(const std::string& modality) {
     std::vector<CachedLabel> result;
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     if (modality.empty()) {
         sqlite3_prepare_v2(
             db_,
             "SELECT id, name, modality FROM labels ORDER BY name",
-            -1, &stmt, nullptr
+            -1, &guard.stmt, nullptr
         );
     } else {
         sqlite3_prepare_v2(
             db_,
             "SELECT id, name, modality FROM labels "
             "WHERE modality = ? ORDER BY name",
-            -1, &stmt, nullptr
+            -1, &guard.stmt, nullptr
         );
-        sqlite3_bind_text(stmt, 1, modality.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 1, modality.c_str(), -1, SQLITE_TRANSIENT);
     }
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        result.push_back(row_to_label(stmt));
+    while (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result.push_back(row_to_label(guard.stmt));
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 
 std::optional<CachedLabel> Cache::find_label_by_name(const std::string& name) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, modality FROM labels "
         "WHERE name = ? COLLATE NOCASE",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
 
     std::optional<CachedLabel> result;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = row_to_label(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_label(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
+    return result;
+}
+
+std::optional<CachedLabel> Cache::find_label_by_id(const std::string& id) {
+    StmtGuard guard;
+    sqlite3_prepare_v2(
+        db_,
+        "SELECT id, name, modality FROM labels WHERE id = ?",
+        -1, &guard.stmt, nullptr
+    );
+    sqlite3_bind_text(guard.stmt, 1, id.c_str(), -1, SQLITE_TRANSIENT);
+
+    std::optional<CachedLabel> result;
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_label(guard.stmt);
+    }
+
     return result;
 }
 
@@ -489,29 +556,28 @@ std::optional<CachedLabel> Cache::find_label_by_name(const std::string& name) {
 // ---------------------------------------------------------------------------
 
 void Cache::store_fields(const std::vector<CachedField>& fields) {
-    exec("BEGIN TRANSACTION");
+    TransactionGuard txn(db_);
     exec("DELETE FROM fields");
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "INSERT INTO fields (id, name, field_type, modality) VALUES (?, ?, ?, ?)",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
 
     for (const auto& f : fields) {
-        sqlite3_bind_text(stmt, 1, f.id.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 2, f.name.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, f.field_type.c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 4, f.modality.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 1, f.id.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 2, f.name.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 3, f.field_type.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 4, f.modality.c_str(), -1, SQLITE_TRANSIENT);
 
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
+        sqlite3_step(guard.stmt);
+        sqlite3_reset(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     update_timestamp("fields");
-    exec("COMMIT");
+    txn.commit();
 }
 
 static CachedField row_to_field(sqlite3_stmt* stmt) {
@@ -526,47 +592,45 @@ static CachedField row_to_field(sqlite3_stmt* stmt) {
 std::vector<CachedField> Cache::get_fields(const std::string& modality) {
     std::vector<CachedField> result;
 
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     if (modality.empty()) {
         sqlite3_prepare_v2(
             db_,
             "SELECT id, name, field_type, modality FROM fields ORDER BY name",
-            -1, &stmt, nullptr
+            -1, &guard.stmt, nullptr
         );
     } else {
         sqlite3_prepare_v2(
             db_,
             "SELECT id, name, field_type, modality FROM fields "
             "WHERE modality = ? ORDER BY name",
-            -1, &stmt, nullptr
+            -1, &guard.stmt, nullptr
         );
-        sqlite3_bind_text(stmt, 1, modality.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(guard.stmt, 1, modality.c_str(), -1, SQLITE_TRANSIENT);
     }
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        result.push_back(row_to_field(stmt));
+    while (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result.push_back(row_to_field(guard.stmt));
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 
 std::optional<CachedField> Cache::find_field_by_name(const std::string& name) {
-    sqlite3_stmt* stmt = nullptr;
+    StmtGuard guard;
     sqlite3_prepare_v2(
         db_,
         "SELECT id, name, field_type, modality FROM fields "
         "WHERE name = ? COLLATE NOCASE",
-        -1, &stmt, nullptr
+        -1, &guard.stmt, nullptr
     );
-    sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(guard.stmt, 1, name.c_str(), -1, SQLITE_TRANSIENT);
 
     std::optional<CachedField> result;
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
-        result = row_to_field(stmt);
+    if (sqlite3_step(guard.stmt) == SQLITE_ROW) {
+        result = row_to_field(guard.stmt);
     }
 
-    sqlite3_finalize(stmt);
     return result;
 }
 

@@ -1,8 +1,12 @@
-#include "error.h"
+#include "core/error.h"
 
 #include <regex>
 #include <sstream>
 #include <string>
+
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 ApolloError::ApolloError(ErrorKind kind, const std::string& message)
     : std::runtime_error(message), kind_(kind), retry_after_(std::nullopt) {}
@@ -23,8 +27,8 @@ std::optional<int> ApolloError::retry_after() const noexcept {
 // Returns seconds to wait, or std::nullopt if unparseable.
 static std::optional<int> parse_rate_limit_wait(const std::string& message) {
     // Look for "X times per hour" or "X times per minute"
-    std::regex hour_re(R"((\d+)\s+times?\s+per\s+hour)", std::regex_constants::icase);
-    std::regex minute_re(R"((\d+)\s+times?\s+per\s+minute)", std::regex_constants::icase);
+    static const std::regex hour_re(R"((\d+)\s+times?\s+per\s+hour)", std::regex_constants::icase);
+    static const std::regex minute_re(R"((\d+)\s+times?\s+per\s+minute)", std::regex_constants::icase);
 
     std::smatch match;
     if (std::regex_search(message, match, hour_re)) {
@@ -75,7 +79,27 @@ void check_http_status(long status_code, const std::string& response_body) {
     }
 
     if (status_code == 404) {
-        throw ApolloError(ErrorKind::NotFound, "Resource not found");
+        std::string message = "Resource not found";
+        try {
+            auto body = json::parse(response_body);
+            if (body.contains("error") && body["error"].is_string()) {
+                message = body["error"].get<std::string>();
+            }
+        } catch (const json::parse_error&) {}
+        throw ApolloError(ErrorKind::NotFound, message);
+    }
+
+    if (status_code == 422) {
+        std::string message = "Unprocessable entity (HTTP 422)";
+        try {
+            auto body = json::parse(response_body);
+            if (body.contains("error") && body["error"].is_string()) {
+                message = body["error"].get<std::string>();
+            } else if (body.contains("message") && body["message"].is_string()) {
+                message = body["message"].get<std::string>();
+            }
+        } catch (const json::parse_error&) {}
+        throw ApolloError(ErrorKind::Validation, message);
     }
 
     if (status_code == 429) {
@@ -162,5 +186,5 @@ std::string format_error(const ApolloError& e) {
         case ErrorKind::Internal:
             return std::string("Internal error: ") + e.what();
     }
-    return std::string("Error: ") + e.what();
+    __builtin_unreachable();
 }

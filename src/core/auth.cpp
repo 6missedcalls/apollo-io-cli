@@ -25,7 +25,7 @@ std::string get_api_key() {
             throw ApolloError(
                 ErrorKind::Auth,
                 "Invalid API key in config file. "
-                "Run 'capollo config init' to reconfigure."
+                "Run 'apollo config init' to reconfigure."
             );
         }
         return config.api_key;
@@ -33,7 +33,7 @@ std::string get_api_key() {
 
     throw ApolloError(
         ErrorKind::Auth,
-        "No API key found. Set APOLLO_API_KEY environment variable or run 'capollo config init'"
+        "No API key found. Set APOLLO_API_KEY environment variable or run 'apollo config init'"
     );
 }
 

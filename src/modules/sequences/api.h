@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../../core/types.h"
+#include "core/types.h"
 #include "model.h"
 
 namespace sequences_api {
@@ -15,8 +15,7 @@ namespace sequences_api {
 // POST /api/v1/emailer_campaigns/search
 OffsetPage<Sequence> search_sequences(const nlohmann::json& body);
 
-// Get full sequence details including steps
-// GET /api/v1/sequences/get?sequence_id=<id>
+// Fetches sequence by ID via search endpoint (GET sequences/get is non-functional)
 Sequence get_sequence(const std::string& id);
 
 // Add contacts to a sequence

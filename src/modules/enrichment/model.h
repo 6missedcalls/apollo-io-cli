@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 // ---------------------------------------------------------------------------
 // PersonMatch
 // ---------------------------------------------------------------------------
@@ -25,10 +23,10 @@ struct PersonMatch {
     std::optional<std::string> state;
     std::optional<std::string> country;
     std::optional<std::string> organization_name;
-    json raw;  // Store full response for --json output
+    nlohmann::json raw;  // Store full response for --json output
 };
 
-inline void from_json(const json& j, PersonMatch& p) {
+inline void from_json(const nlohmann::json& j, PersonMatch& p) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -89,11 +87,11 @@ struct OrgEnrichment {
     std::optional<std::string> short_description;
     std::optional<int64_t> annual_revenue;
     std::optional<std::string> annual_revenue_printed;
-    json funding_data;
-    json raw;
+    nlohmann::json funding_data;
+    nlohmann::json raw;
 };
 
-inline void from_json(const json& j, OrgEnrichment& o) {
+inline void from_json(const nlohmann::json& j, OrgEnrichment& o) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -150,7 +148,7 @@ inline void from_json(const json& j, OrgEnrichment& o) {
     if (j.contains("funding_events") && j["funding_events"].is_array()) {
         o.funding_data = j["funding_events"];
     } else {
-        o.funding_data = json::array();
+        o.funding_data = nlohmann::json::array();
     }
 
     o.raw = j;

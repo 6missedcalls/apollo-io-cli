@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct EmailAccount {
     std::string id;
     std::string email;
@@ -17,7 +15,7 @@ struct EmailAccount {
     int true_warmup_daily_limit = 0;
 };
 
-inline void from_json(const json& j, EmailAccount& ea) {
+inline void from_json(const nlohmann::json& j, EmailAccount& ea) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

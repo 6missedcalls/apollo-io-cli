@@ -9,6 +9,9 @@
 #include "core/auth.h"
 #include "core/error.h"
 #include "core/http_client.h"
+#include "core/output.h"
+
+using json = nlohmann::json;
 
 static const std::string BASE_URL = "https://api.apollo.io/api/v1/";
 
@@ -22,9 +25,14 @@ std::string build_url(
         return url;
     }
 
-    // Use a temporary CURL handle for URL-encoding
-    CURL* curl = curl_easy_init();
-    if (curl == nullptr) {
+    // Use a temporary CURL handle for URL-encoding, with RAII cleanup
+    struct CurlGuard {
+        CURL* handle = curl_easy_init();
+        ~CurlGuard() { if (handle) curl_easy_cleanup(handle); }
+    };
+    CurlGuard guard;
+
+    if (guard.handle == nullptr) {
         // Fall back to unencoded values if curl init fails
         url += '?';
         bool first = true;
@@ -44,7 +52,7 @@ std::string build_url(
         if (!first) {
             url += '&';
         }
-        char* encoded = curl_easy_escape(curl, value.c_str(), static_cast<int>(value.size()));
+        char* encoded = curl_easy_escape(guard.handle, value.c_str(), static_cast<int>(value.size()));
         if (encoded != nullptr) {
             url += key + "=" + std::string(encoded);
             curl_free(encoded);
@@ -54,7 +62,6 @@ std::string build_url(
         first = false;
     }
 
-    curl_easy_cleanup(curl);
     return url;
 }
 
@@ -75,11 +82,13 @@ json rest_get(
 ) {
     return with_retry([&]() {
         auto url = build_url(path, query_params);
+        print_verbose(">> GET " + url);
         auto headers = get_auth_headers();
         headers.emplace_back("Content-Type", "application/json");
 
         HttpClient client;
         auto response = client.get(url, headers);
+        print_verbose("<< " + std::to_string(response.status_code) + " (" + std::to_string(response.body.size()) + " bytes)");
 
         check_http_status(response.status_code, response.body);
         auto parsed = parse_json_response(response.body);
@@ -95,11 +104,13 @@ json rest_post(
 ) {
     return with_retry([&]() {
         auto url = build_url(path);
+        print_verbose(">> POST " + url);
         auto headers = get_auth_headers();
         headers.emplace_back("Content-Type", "application/json");
 
         HttpClient client;
         auto response = client.post(url, body.dump(), headers);
+        print_verbose("<< " + std::to_string(response.status_code) + " (" + std::to_string(response.body.size()) + " bytes)");
 
         check_http_status(response.status_code, response.body);
         auto parsed = parse_json_response(response.body);
@@ -115,11 +126,13 @@ json rest_put(
 ) {
     return with_retry([&]() {
         auto url = build_url(path);
+        print_verbose(">> PUT " + url);
         auto headers = get_auth_headers();
         headers.emplace_back("Content-Type", "application/json");
 
         HttpClient client;
         auto response = client.put(url, body.dump(), headers);
+        print_verbose("<< " + std::to_string(response.status_code) + " (" + std::to_string(response.body.size()) + " bytes)");
 
         check_http_status(response.status_code, response.body);
         auto parsed = parse_json_response(response.body);
@@ -135,11 +148,13 @@ json rest_patch(
 ) {
     return with_retry([&]() {
         auto url = build_url(path);
+        print_verbose(">> PATCH " + url);
         auto headers = get_auth_headers();
         headers.emplace_back("Content-Type", "application/json");
 
         HttpClient client;
         auto response = client.patch(url, body.dump(), headers);
+        print_verbose("<< " + std::to_string(response.status_code) + " (" + std::to_string(response.body.size()) + " bytes)");
 
         check_http_status(response.status_code, response.body);
         auto parsed = parse_json_response(response.body);
@@ -152,11 +167,13 @@ json rest_patch(
 json rest_delete(const std::string& path) {
     return with_retry([&]() {
         auto url = build_url(path);
+        print_verbose(">> DELETE " + url);
         auto headers = get_auth_headers();
         headers.emplace_back("Content-Type", "application/json");
 
         HttpClient client;
         auto response = client.del(url, headers);
+        print_verbose("<< " + std::to_string(response.status_code) + " (" + std::to_string(response.body.size()) + " bytes)");
 
         check_http_status(response.status_code, response.body);
         auto parsed = parse_json_response(response.body);

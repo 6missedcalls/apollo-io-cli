@@ -2,7 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include "../../core/types.h"
+#include "core/types.h"
 #include "model.h"
 
 namespace emails_api {

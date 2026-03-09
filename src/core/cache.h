@@ -38,7 +38,7 @@ struct CachedField {
 
 class Cache {
 public:
-    Cache();   // Opens/creates ~/.config/capollo/cache.db, runs migrations
+    Cache();   // Opens/creates ~/.config/apollo/cache.db, runs migrations
     ~Cache();  // Closes db
 
     // Non-copyable, movable
@@ -52,17 +52,20 @@ public:
     std::vector<CachedUser> get_users();
     std::optional<CachedUser> find_user_by_name(const std::string& name);
     std::optional<CachedUser> find_user_by_email(const std::string& email);
+    std::optional<CachedUser> find_user_by_id(const std::string& id);
 
     // Stages
     void store_stages(const std::vector<CachedStage>& stages, const std::string& type);
     std::vector<CachedStage> get_stages(const std::string& type);
     std::optional<CachedStage> find_stage_by_name(
         const std::string& name, const std::string& type);
+    std::optional<CachedStage> find_stage_by_id(const std::string& id);
 
     // Labels
     void store_labels(const std::vector<CachedLabel>& labels);
     std::vector<CachedLabel> get_labels(const std::string& modality = "");
     std::optional<CachedLabel> find_label_by_name(const std::string& name);
+    std::optional<CachedLabel> find_label_by_id(const std::string& id);
 
     // Fields
     void store_fields(const std::vector<CachedField>& fields);
@@ -88,7 +91,7 @@ private:
 // Get the singleton cache instance
 Cache& get_cache();
 
-// Get the cache database path (~/.config/capollo/cache.db)
+// Get the cache database path (~/.config/apollo/cache.db)
 std::string cache_path();
 
 }  // namespace cache

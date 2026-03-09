@@ -15,7 +15,7 @@ install: build
 
 test:
 	cmake -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=Debug
-	cmake --build $(BUILD_DIR) --target capollo_tests -j$(shell sysctl -n hw.ncpu 2>/dev/null || nproc)
+	cmake --build $(BUILD_DIR) --target apollo_tests -j$(shell sysctl -n hw.ncpu 2>/dev/null || nproc)
 	cd $(BUILD_DIR) && ctest --output-on-failure
 
 clean:

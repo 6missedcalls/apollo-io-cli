@@ -3,8 +3,6 @@
 #include <stdexcept>
 #include <string>
 
-#include <curl/curl.h>
-
 namespace {
 
 struct WriteContext {
@@ -34,7 +32,7 @@ HttpClient::HttpClient()
 
 HttpClient::~HttpClient() {
     if (curl_handle_ != nullptr) {
-        curl_easy_cleanup(static_cast<CURL*>(curl_handle_));
+        curl_easy_cleanup(curl_handle_);
     }
 }
 
@@ -50,7 +48,7 @@ HttpClient& HttpClient::operator=(HttpClient&& other) noexcept {
         return *this;
     }
     if (curl_handle_ != nullptr) {
-        curl_easy_cleanup(static_cast<CURL*>(curl_handle_));
+        curl_easy_cleanup(curl_handle_);
     }
     curl_handle_ = other.curl_handle_;
     timeout_seconds_ = other.timeout_seconds_;
@@ -111,10 +109,8 @@ HttpResponse HttpClient::execute(
         return HttpResponse{0, "", "HttpClient has been moved from"};
     }
 
-    auto* curl = static_cast<CURL*>(curl_handle_);
-
     // Reset all options from any previous request
-    curl_easy_reset(curl);
+    curl_easy_reset(curl_handle_);
 
     HttpResponse response;
     std::string response_body;
@@ -128,28 +124,28 @@ HttpResponse HttpClient::execute(
         header_list = curl_slist_append(header_list, formatted.c_str());
     }
 
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method.c_str());
+    curl_easy_setopt(curl_handle_, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl_handle_, CURLOPT_CUSTOMREQUEST, method.c_str());
 
     if (method == "POST" || method == "PUT" || method == "PATCH") {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(body.size()));
+        curl_easy_setopt(curl_handle_, CURLOPT_POSTFIELDS, body.c_str());
+        curl_easy_setopt(curl_handle_, CURLOPT_POSTFIELDSIZE, static_cast<long>(body.size()));
     }
 
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_ctx);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_seconds_);
+    curl_easy_setopt(curl_handle_, CURLOPT_HTTPHEADER, header_list);
+    curl_easy_setopt(curl_handle_, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl_handle_, CURLOPT_WRITEDATA, &write_ctx);
+    curl_easy_setopt(curl_handle_, CURLOPT_TIMEOUT, timeout_seconds_);
     // Disable redirects — API endpoints should not redirect,
     // and following redirects could leak the API key header
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
+    curl_easy_setopt(curl_handle_, CURLOPT_FOLLOWLOCATION, 0L);
     // Explicitly enforce TLS certificate verification
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+    curl_easy_setopt(curl_handle_, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl_handle_, CURLOPT_SSL_VERIFYHOST, 2L);
     // Enable TCP keepalive
-    curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+    curl_easy_setopt(curl_handle_, CURLOPT_TCP_KEEPALIVE, 1L);
 
-    const CURLcode result = curl_easy_perform(curl);
+    const CURLcode result = curl_easy_perform(curl_handle_);
 
     // Clean up the headers slist regardless of outcome
     if (header_list != nullptr) {
@@ -164,7 +160,7 @@ HttpResponse HttpClient::execute(
     }
 
     long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_easy_getinfo(curl_handle_, CURLINFO_RESPONSE_CODE, &http_code);
 
     response.status_code = http_code;
     response.body = std::move(response_body);

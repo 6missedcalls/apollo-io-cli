@@ -178,6 +178,7 @@ void fields_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -220,6 +221,7 @@ void fields_commands::register_commands(CLI::App& app) {
                 render_field_detail(field);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

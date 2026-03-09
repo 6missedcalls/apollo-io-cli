@@ -12,6 +12,7 @@
 #include "core/color.h"
 #include "core/error.h"
 #include "core/output.h"
+#include "core/resolver.h"
 #include "core/paginator.h"
 #include "modules/sequences/api.h"
 #include "modules/sequences/model.h"
@@ -48,7 +49,7 @@ void render_sequence_table(const std::vector<Sequence>& sequences) {
     }
 
     TableRenderer table({
-        {"ID",        4, 24, false},
+        {"ID",        4, 26, false},
         {"NAME",      4, 30, false},
         {"ACTIVE",    4,  6, false},
         {"STEPS",     4,  5, true},
@@ -144,7 +145,8 @@ void render_sequence_detail(const Sequence& seq) {
     detail.add_field("Steps", std::to_string(seq.num_steps));
 
     if (seq.user_id.has_value() && !seq.user_id.value().empty()) {
-        detail.add_field("Owner", seq.user_id.value());
+        const auto& r = resolve::get_resolver();
+        detail.add_field("Owner", r.user_name(seq.user_id.value()));
     }
 
     detail.add_blank_line();
@@ -171,6 +173,10 @@ void render_sequence_detail(const Sequence& seq) {
                 step_desc += " | " + step.subject.value();
             }
             detail.add_field("", step_desc);
+        }
+    } else {
+        if (get_output_format() != OutputFormat::Json) {
+            print_warning("Step details unavailable (Apollo API limitation)");
         }
     }
 
@@ -272,6 +278,7 @@ void sequences_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -290,6 +297,7 @@ void sequences_commands::register_commands(CLI::App& app) {
                 render_sequence_detail(seq);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -343,6 +351,7 @@ void sequences_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

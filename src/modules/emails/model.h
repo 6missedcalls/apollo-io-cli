@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct OutreachEmail {
     std::string id;
     std::optional<std::string> subject;
@@ -19,7 +17,7 @@ struct OutreachEmail {
     std::optional<std::string> clicked_at;
 };
 
-inline void from_json(const json& j, OutreachEmail& e) {
+inline void from_json(const nlohmann::json& j, OutreachEmail& e) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

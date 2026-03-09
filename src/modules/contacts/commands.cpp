@@ -9,10 +9,11 @@
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../../core/color.h"
-#include "../../core/error.h"
-#include "../../core/output.h"
-#include "../../core/paginator.h"
+#include "core/color.h"
+#include "core/error.h"
+#include "core/output.h"
+#include "core/paginator.h"
+#include "core/resolver.h"
 #include "api.h"
 #include "model.h"
 
@@ -25,6 +26,8 @@ using json = nlohmann::json;
 namespace {
 
 void render_contact_table(const std::vector<Contact>& contacts) {
+    const auto& r = resolve::get_resolver();
+
     if (get_output_format() == OutputFormat::Csv) {
         output_csv_header({"ID", "NAME", "EMAIL", "STATUS", "TITLE", "ORG", "OWNER"});
         for (const auto& c : contacts) {
@@ -35,20 +38,20 @@ void render_contact_table(const std::vector<Contact>& contacts) {
                 c.email_status,
                 c.title.value_or(""),
                 c.organization_name.value_or(""),
-                c.owner_id.value_or("")
+                r.user_name(c.owner_id.value_or(""))
             });
         }
         return;
     }
 
     TableRenderer table({
-        {"ID",     6, 12, false},
+        {"ID",     6, 26, false},
         {"NAME",   8, 20, false},
         {"EMAIL", 10, 25, false},
         {"STATUS", 4, 10, false},
         {"TITLE",  6, 20, false},
         {"ORG",    6, 20, false},
-        {"OWNER",  6, 12, false}
+        {"OWNER",  6, 20, false}
     });
 
     for (const auto& c : contacts) {
@@ -61,7 +64,7 @@ void render_contact_table(const std::vector<Contact>& contacts) {
             status_str,
             c.title.value_or(""),
             c.organization_name.value_or(""),
-            c.owner_id.value_or("")
+            r.user_name(c.owner_id.value_or(""))
         });
     }
 
@@ -147,6 +150,8 @@ void render_contact_detail(const Contact& c) {
         return;
     }
 
+    const auto& r = resolve::get_resolver();
+
     DetailRenderer detail;
     detail.add_section(c.name.empty() ? c.id : c.name);
 
@@ -176,13 +181,13 @@ void render_contact_detail(const Contact& c) {
     }
 
     if (c.owner_id.has_value() && !c.owner_id->empty()) {
-        detail.add_field("Owner", c.owner_id.value());
+        detail.add_field("Owner", r.user_name(c.owner_id.value()));
     }
     if (c.account_id.has_value() && !c.account_id->empty()) {
         detail.add_field("Account", c.account_id.value());
     }
     if (c.contact_stage_id.has_value() && !c.contact_stage_id->empty()) {
-        detail.add_field("Stage", c.contact_stage_id.value());
+        detail.add_field("Stage", r.stage_name(c.contact_stage_id.value()));
     }
 
     // Phone numbers
@@ -230,12 +235,7 @@ void render_contact_detail(const Contact& c) {
     }
 
     if (!c.label_ids.empty()) {
-        std::string labels;
-        for (size_t i = 0; i < c.label_ids.size(); ++i) {
-            if (i > 0) labels += ", ";
-            labels += c.label_ids[i];
-        }
-        detail.add_field("Labels", labels);
+        detail.add_field("Labels", r.label_names(c.label_ids));
     }
 
     if (c.source.has_value() && !c.source->empty()) {
@@ -373,6 +373,7 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -391,6 +392,7 @@ void contacts_commands::register_commands(CLI::App& app) {
                 render_contact_detail(contact);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -461,10 +463,13 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
 
                 auto contact = contacts_api::create_contact(input);
-                print_success("Created contact " + contact.id + " (" + contact.name + ")");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Created contact " + contact.id + " (" + contact.name + ")");
+                }
                 render_contact_detail(contact);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -539,10 +544,13 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
 
                 auto contact = contacts_api::update_contact(opts->id, input);
-                print_success("Updated contact " + contact.id);
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Updated contact " + contact.id);
+                }
                 render_contact_detail(contact);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -579,6 +587,7 @@ void contacts_commands::register_commands(CLI::App& app) {
                 print_success("Deleted contact " + opts->id);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -654,7 +663,9 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
 
                 auto contacts = contacts_api::bulk_create(inputs);
-                print_success("Created " + std::to_string(contacts.size()) + " contact(s)");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Created " + std::to_string(contacts.size()) + " contact(s)");
+                }
 
                 if (get_output_format() == OutputFormat::Json) {
                     render_contact_json(contacts);
@@ -663,6 +674,7 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -711,7 +723,9 @@ void contacts_commands::register_commands(CLI::App& app) {
                     }
                 }
 
-                print_success("Updated " + std::to_string(contacts.size()) + " contact(s)");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Updated " + std::to_string(contacts.size()) + " contact(s)");
+                }
 
                 if (get_output_format() == OutputFormat::Json) {
                     output_json(response);
@@ -720,6 +734,7 @@ void contacts_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

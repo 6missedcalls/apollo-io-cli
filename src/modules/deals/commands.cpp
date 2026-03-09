@@ -11,6 +11,7 @@
 #include "core/color.h"
 #include "core/error.h"
 #include "core/output.h"
+#include "core/resolver.h"
 #include "core/paginator.h"
 #include "modules/deals/api.h"
 #include "modules/deals/model.h"
@@ -45,6 +46,8 @@ std::string deal_status_label(bool is_won, bool is_closed) {
 }
 
 void render_deal_table(const std::vector<Deal>& deals) {
+    const auto& r = resolve::get_resolver();
+
     if (get_output_format() == OutputFormat::Csv) {
         output_csv_header({"ID", "NAME", "AMOUNT", "STAGE", "STATUS", "OWNER", "CLOSE_DATE"});
         for (const auto& deal : deals) {
@@ -54,7 +57,7 @@ void render_deal_table(const std::vector<Deal>& deals) {
                 format_amount(deal.amount),
                 deal.stage_name.value_or(""),
                 deal_status_label(deal.is_won, deal.is_closed),
-                deal.owner_id.value_or(""),
+                r.user_name(deal.owner_id.value_or("")),
                 deal.closed_date.value_or("")
             });
         }
@@ -62,12 +65,12 @@ void render_deal_table(const std::vector<Deal>& deals) {
     }
 
     TableRenderer table({
-        {"ID",         12, 12, false},
+        {"ID",         12, 26, false},
         {"NAME",       10, 25, false},
         {"AMOUNT",      6, 10, true},
         {"STAGE",       6, 15, false},
         {"STATUS",      6, 10, false},
-        {"OWNER",       6, 12, false},
+        {"OWNER",       6, 20, false},
         {"CLOSE_DATE",  6, 12, false}
     });
 
@@ -81,7 +84,7 @@ void render_deal_table(const std::vector<Deal>& deals) {
             format_amount(deal.amount),
             deal.stage_name.value_or(""),
             status_colored,
-            deal.owner_id.value_or(""),
+            r.user_name(deal.owner_id.value_or("")),
             deal.closed_date.value_or("")
         });
     }
@@ -152,7 +155,8 @@ void render_deal_detail(const Deal& deal) {
         detail.add_field("Stage", deal.stage_name.value());
     }
     if (deal.owner_id.has_value()) {
-        detail.add_field("Owner ID", deal.owner_id.value());
+        const auto& r = resolve::get_resolver();
+        detail.add_field("Owner", r.user_name(deal.owner_id.value()));
     }
     if (deal.account_id.has_value()) {
         detail.add_field("Account ID", deal.account_id.value());
@@ -231,6 +235,7 @@ void deals_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -249,6 +254,7 @@ void deals_commands::register_commands(CLI::App& app) {
                 render_deal_detail(deal);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -298,10 +304,13 @@ void deals_commands::register_commands(CLI::App& app) {
                 }
 
                 auto deal = deals_api::create_deal(input);
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Deal created: " + deal.id);
+                }
                 render_deal_detail(deal);
-                print_success("Deal created: " + deal.id);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -355,10 +364,13 @@ void deals_commands::register_commands(CLI::App& app) {
                 }
 
                 auto deal = deals_api::update_deal(opts->id, input);
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Deal updated: " + deal.id);
+                }
                 render_deal_detail(deal);
-                print_success("Deal updated: " + deal.id);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

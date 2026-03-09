@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct Stage {
     std::string id;
     std::string team_id;
@@ -22,7 +20,7 @@ struct Stage {
     std::optional<double> probability;
 };
 
-inline void from_json(const json& j, Stage& s) {
+inline void from_json(const nlohmann::json& j, Stage& s) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

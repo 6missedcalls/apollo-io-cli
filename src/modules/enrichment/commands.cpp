@@ -209,6 +209,7 @@ void enrichment_commands::register_commands(CLI::App& app) {
                 render_person_detail(person);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -228,6 +229,7 @@ void enrichment_commands::register_commands(CLI::App& app) {
                 render_org_detail(org);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

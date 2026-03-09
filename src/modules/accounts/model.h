@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct Account {
     std::string id;
     std::string name;
@@ -29,13 +27,13 @@ struct Account {
     std::optional<std::string> parent_account_id;
     std::optional<std::string> existence_level;     // full, partial
     std::vector<std::string> label_ids;
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
     std::string modality;                           // "account"
     std::string created_at;
     std::string updated_at;
 };
 
-inline void from_json(const json& j, Account& a) {
+inline void from_json(const nlohmann::json& j, Account& a) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -85,7 +83,7 @@ inline void from_json(const json& j, Account& a) {
     if (j.contains("typed_custom_fields") && !j["typed_custom_fields"].is_null()) {
         a.typed_custom_fields = j["typed_custom_fields"];
     } else {
-        a.typed_custom_fields = json::object();
+        a.typed_custom_fields = nlohmann::json::object();
     }
 }
 
@@ -101,11 +99,11 @@ struct AccountCreateInput {
     std::optional<std::string> account_stage_id;
     std::optional<std::string> linkedin_url;
     std::vector<std::string> append_label_names;
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
 };
 
-inline json to_json_body(const AccountCreateInput& input) {
-    json body = json::object();
+inline nlohmann::json to_json_body(const AccountCreateInput& input) {
+    nlohmann::json body = nlohmann::json::object();
 
     if (!input.name.empty()) {
         body["name"] = input.name;
@@ -142,8 +140,8 @@ struct OwnershipUpdate {
     std::string owner_id;
 };
 
-inline json to_json_body(const OwnershipUpdate& input) {
-    json body = json::object();
+inline nlohmann::json to_json_body(const OwnershipUpdate& input) {
+    nlohmann::json body = nlohmann::json::object();
     body["account_ids"] = input.account_ids;
     body["owner_id"] = input.owner_id;
     return body;

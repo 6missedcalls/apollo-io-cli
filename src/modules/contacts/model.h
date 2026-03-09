@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 // ---------------------------------------------------------------------------
 // PhoneNumber
 // ---------------------------------------------------------------------------
@@ -18,14 +16,14 @@ struct PhoneNumber {
     std::string sanitized_number;
 };
 
-inline void from_json(const json& j, PhoneNumber& p) {
+inline void from_json(const nlohmann::json& j, PhoneNumber& p) {
     p.raw_number = j.value("raw_number", "");
     p.type = j.value("type", "");
     p.sanitized_number = j.value("sanitized_number", "");
 }
 
-inline json to_json_body(const PhoneNumber& p) {
-    json j = json::object();
+inline nlohmann::json to_json_body(const PhoneNumber& p) {
+    nlohmann::json j = nlohmann::json::object();
     if (!p.raw_number.empty()) j["raw_number"] = p.raw_number;
     if (!p.type.empty()) j["type"] = p.type;
     if (!p.sanitized_number.empty()) j["sanitized_number"] = p.sanitized_number;
@@ -67,7 +65,7 @@ struct Contact {
     std::string created_at;
     std::string updated_at;
 
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
 
     std::optional<std::string> existence_level;  // full, invisible
 
@@ -81,7 +79,7 @@ struct Contact {
     std::vector<std::string> departments;
 };
 
-inline void from_json(const json& j, Contact& c) {
+inline void from_json(const nlohmann::json& j, Contact& c) {
     // Null-safe accessors: j.value() doesn't handle null, only missing keys
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
@@ -147,7 +145,7 @@ inline void from_json(const json& j, Contact& c) {
     if (j.contains("typed_custom_fields") && !j["typed_custom_fields"].is_null()) {
         c.typed_custom_fields = j["typed_custom_fields"];
     } else {
-        c.typed_custom_fields = json::object();
+        c.typed_custom_fields = nlohmann::json::object();
     }
 
     c.existence_level = opt_str("existence_level");
@@ -188,11 +186,11 @@ struct ContactCreateInput {
     std::optional<std::string> contact_stage_id;
     std::vector<std::string> label_names;
     std::vector<PhoneNumber> phone_numbers;
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
 };
 
-inline json to_json_body(const ContactCreateInput& input) {
-    json body = json::object();
+inline nlohmann::json to_json_body(const ContactCreateInput& input) {
+    nlohmann::json body = nlohmann::json::object();
 
     if (input.first_name.has_value()) body["first_name"] = input.first_name.value();
     if (input.last_name.has_value()) body["last_name"] = input.last_name.value();
@@ -210,7 +208,7 @@ inline json to_json_body(const ContactCreateInput& input) {
     }
 
     if (!input.phone_numbers.empty()) {
-        json arr = json::array();
+        nlohmann::json arr = nlohmann::json::array();
         for (const auto& pn : input.phone_numbers) {
             arr.push_back(to_json_body(pn));
         }

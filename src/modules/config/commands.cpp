@@ -155,14 +155,14 @@ Config apply_key_value(const Config& cfg, const std::string& key, const std::str
 // ---------------------------------------------------------------------------
 
 void config_commands::register_commands(CLI::App& app) {
-    auto* config = app.add_subcommand("config", "Manage capollo CLI configuration");
+    auto* config = app.add_subcommand("config", "Manage apollo CLI configuration");
     config->require_subcommand(1);
 
     // -----------------------------------------------------------------------
     // config init
     // -----------------------------------------------------------------------
     {
-        auto* cmd = config->add_subcommand("init", "Interactive setup: configure capollo with your Apollo API key");
+        auto* cmd = config->add_subcommand("init", "Interactive setup: configure apollo with your Apollo API key");
 
         cmd->callback([]() {
             try {

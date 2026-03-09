@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct ApolloUser {
     std::string id;
     std::string first_name;
@@ -18,7 +16,7 @@ struct ApolloUser {
     std::string created_at;
 };
 
-inline void from_json(const json& j, ApolloUser& u) {
+inline void from_json(const nlohmann::json& j, ApolloUser& u) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

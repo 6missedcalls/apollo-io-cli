@@ -10,9 +10,9 @@
 std::string config_dir() {
     const char* home = std::getenv("HOME");
     if (home == nullptr) {
-        return ".config/capollo/";
+        throw std::runtime_error("HOME environment variable is not set");
     }
-    return std::string(home) + "/.config/capollo/";
+    return std::string(home) + "/.config/apollo/";
 }
 
 std::string config_path() {

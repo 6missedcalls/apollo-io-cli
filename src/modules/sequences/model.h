@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 // ---------------------------------------------------------------------------
 // SequenceStep
 // ---------------------------------------------------------------------------
@@ -22,7 +20,7 @@ struct SequenceStep {
     std::optional<std::string> body_text;
 };
 
-inline void from_json(const json& j, SequenceStep& s) {
+inline void from_json(const nlohmann::json& j, SequenceStep& s) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -69,7 +67,7 @@ struct Sequence {
     std::vector<SequenceStep> steps;
 };
 
-inline void from_json(const json& j, Sequence& s) {
+inline void from_json(const nlohmann::json& j, Sequence& s) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;

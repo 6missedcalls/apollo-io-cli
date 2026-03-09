@@ -13,6 +13,7 @@
 #include "core/error.h"
 #include "core/filter.h"
 #include "core/output.h"
+#include "core/resolver.h"
 #include "core/paginator.h"
 #include "modules/tasks/api.h"
 #include "modules/tasks/model.h"
@@ -43,13 +44,13 @@ void render_task_table(const std::vector<Task>& tasks) {
     }
 
     TableRenderer table({
-        {"ID",       12, 12, false},
+        {"ID",       12, 26, false},
         {"TYPE",      6, 10, false},
         {"TITLE",     8, 30, false},
         {"PRIORITY",  4,  8, false},
         {"STATUS",    6, 10, false},
         {"DUE",       8, 20, false},
-        {"CONTACT",   6, 12, false}
+        {"CONTACT",   6, 26, false}
     });
 
     for (const auto& task : tasks) {
@@ -125,7 +126,8 @@ void render_task_detail(const Task& task) {
         detail.add_field("Due", task.due_at.value());
     }
     if (task.user_id.has_value()) {
-        detail.add_field("User ID", task.user_id.value());
+        const auto& r = resolve::get_resolver();
+        detail.add_field("Assigned To", r.user_name(task.user_id.value()));
     }
     if (task.contact_id.has_value()) {
         detail.add_field("Contact ID", task.contact_id.value());
@@ -212,6 +214,7 @@ void tasks_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -263,10 +266,13 @@ void tasks_commands::register_commands(CLI::App& app) {
                 }
 
                 auto task = tasks_api::create_task(input);
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Task created: " + task.id);
+                }
                 render_task_detail(task);
-                print_success("Task created: " + task.id);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -312,6 +318,7 @@ void tasks_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

@@ -23,40 +23,40 @@
 #include "modules/emails/commands.h"
 #include "modules/config/commands.h"
 #include "modules/cache/commands.h"
+#include "modules/users/api.h"
+#include "modules/users/model.h"
 
 using json = nlohmann::json;
 
+static const char* APOLLO_BANNER = R"(
+   █████╗ ██████╗  ██████╗ ██╗     ██╗      ██████╗
+  ██╔══██╗██╔══██╗██╔═══██╗██║     ██║     ██╔═══██╗
+  ███████║██████╔╝██║   ██║██║     ██║     ██║   ██║
+  ██╔══██║██╔═══╝ ██║   ██║██║     ██║     ██║   ██║
+  ██║  ██║██║     ╚██████╔╝███████╗███████╗╚██████╔╝
+  ╚═╝  ╚═╝╚═╝      ╚═════╝ ╚══════╝╚══════╝ ╚═════╝
+)";
+
 int main(int argc, char** argv) {
-    // Bare `capollo` with no arguments — show splash screen
+    // Bare `apollo` with no arguments — show splash screen
     if (argc == 1) {
-        std::cout << R"(
-   ██████╗ █████╗ ██████╗  ██████╗ ██╗     ██╗      ██████╗
-  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██║     ██║     ██╔═══██╗
-  ██║     ███████║██████╔╝██║   ██║██║     ██║     ██║   ██║
-  ██║     ██╔══██║██╔═══╝ ██║   ██║██║     ██║     ██║   ██║
-  ╚██████╗██║  ██║██║     ╚██████╔╝███████╗███████╗╚██████╔╝
-   ╚═════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚══════╝╚══════╝ ╚═════╝
-
-  Apollo.io CLI for humans and AI agents
-
-  Run 'capollo --help' for available commands
-  Run 'capollo <command> --help' for command details
-)" << std::endl;
+        std::cout << APOLLO_BANNER
+                  << "  Apollo.io CLI for humans and AI agents\n"
+                  << "  built by 6missedcalls\n"
+                  << "  v" << APOLLO_VERSION << "\n\n"
+                  << "  Run 'apollo --help' for available commands\n"
+                  << "  Run 'apollo <command> --help' for command details\n"
+                  << "\n";
         return 0;
     }
 
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
-    CLI::App app{"capollo \xe2\x80\x94 Apollo.io CLI for humans and AI agents"};
+    CLI::App app{"Apollo CLI for humans and AI agents"};
     app.add_flag_function("--version", [](int) {
-        std::cout << R"(
-   ██████╗ █████╗ ██████╗  ██████╗ ██╗     ██╗      ██████╗
-  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██║     ██║     ██╔═══██╗
-  ██║     ███████║██████╔╝██║   ██║██║     ██║     ██║   ██║
-  ██║     ██╔══██║██╔═══╝ ██║   ██║██║     ██║     ██║   ██║
-  ╚██████╗██║  ██║██║     ╚██████╔╝███████╗███████╗╚██████╔╝
-   ╚═════╝╚═╝  ╚═╝╚═╝      ╚═════╝ ╚══════╝╚══════╝ ╚═════╝
-)" << "  v" << CAPOLLO_VERSION << "\n" << std::endl;
+        std::cout << APOLLO_BANNER
+                  << "  v" << APOLLO_VERSION << "\n"
+                  << "  built by 6missedcalls\n";
         throw CLI::Success();
     }, "Show version");
     app.require_subcommand();
@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
         if (json_output) set_output_format(OutputFormat::Json);
         if (csv_output) set_output_format(OutputFormat::Csv);
         if (no_color) color::set_enabled(false);
+        if (verbose) set_verbose(true);
     });
 
     // Register module commands — CRM Core
@@ -103,11 +104,38 @@ int main(int argc, char** argv) {
     config_commands::register_commands(app);
     cache_commands::register_commands(app);
 
-    // capollo me — show current user info
+    // Apollo CLI: me — show current user info
     auto* me_cmd = app.add_subcommand("me", "Show your profile and account info");
     me_cmd->callback([&]() {
-        // TODO: implement via users API
-        std::cout << "Not yet implemented" << std::endl;
+        try {
+            auto users = users_api::list_users();
+            // Find current user (first user is typically the API key owner)
+            if (users.empty()) {
+                print_warning("No user data available");
+                return;
+            }
+            const auto& me = users[0];
+            if (get_output_format() == OutputFormat::Json) {
+                nlohmann::json j;
+                j["id"] = me.id;
+                j["name"] = me.name;
+                j["email"] = me.email;
+                j["role"] = me.role.value_or("");
+                j["team_id"] = me.team_id.value_or("");
+                output_json(j);
+            } else {
+                DetailRenderer detail;
+                detail.add_field("ID", me.id);
+                detail.add_field("Name", me.name);
+                detail.add_field("Email", me.email);
+                if (me.role.has_value() && !me.role->empty()) detail.add_field("Role", me.role.value());
+                if (me.team_id.has_value()) detail.add_field("Team ID", me.team_id.value());
+                detail.render(std::cout);
+            }
+        } catch (const ApolloError& e) {
+            print_error(format_error(e));
+            throw;
+        }
     });
 
     // --- Group subcommands (Cobra-style) ---
@@ -133,17 +161,17 @@ int main(int argc, char** argv) {
     try {
         app.parse(argc, argv);
     } catch (const CLI::RequiredError& e) {
-        // When a subcommand group is invoked without a subcommand (e.g. `capollo contacts`),
+        // When a subcommand group is invoked without a subcommand (e.g. `apollo contacts`),
         // show help for that group instead of erroring.
         for (auto* sub : app.get_subcommands()) {
             if (sub->parsed()) {
-                std::cout << sub->help() << std::endl;
+                std::cout << sub->help() << "\n";
                 curl_global_cleanup();
                 return 0;
             }
         }
         // Fallback: show top-level help
-        std::cout << app.help() << std::endl;
+        std::cout << app.help() << "\n";
         curl_global_cleanup();
         return 0;
     } catch (const CLI::ParseError& e) {
@@ -151,7 +179,7 @@ int main(int argc, char** argv) {
         curl_global_cleanup();
         return ret;
     } catch (const ApolloError& e) {
-        print_error(format_error(e));
+        // Error already printed by command callback
         curl_global_cleanup();
         return 1;
     } catch (const std::exception& e) {

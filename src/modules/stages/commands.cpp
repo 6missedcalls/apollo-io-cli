@@ -23,12 +23,16 @@ using json = nlohmann::json;
 namespace {
 
 void render_stage_table(const std::vector<Stage>& stages) {
+    auto stage_label = [](const Stage& s) -> const std::string& {
+        return s.display_name.empty() ? s.name : s.display_name;
+    };
+
     if (get_output_format() == OutputFormat::Csv) {
         output_csv_header({"ID", "NAME", "ORDER", "CATEGORY"});
         for (const auto& stage : stages) {
             output_csv_row({
                 stage.id,
-                stage.display_name,
+                stage_label(stage),
                 std::to_string(stage.display_order),
                 stage.category.value_or("")
             });
@@ -59,7 +63,7 @@ void render_stage_table(const std::vector<Stage>& stages) {
 
         table.add_row({
             stage.id,
-            stage.display_name,
+            stage_label(stage),
             std::to_string(stage.display_order),
             category_colored
         });
@@ -130,6 +134,7 @@ void stages_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -151,6 +156,7 @@ void stages_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -172,6 +178,7 @@ void stages_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

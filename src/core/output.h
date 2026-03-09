@@ -6,8 +6,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 enum class OutputFormat {
     Table,
     Detail,
@@ -64,7 +62,7 @@ private:
 };
 
 // Output JSON to stdout (respects --json flag)
-void output_json(const json& data, std::ostream& out = std::cout);
+void output_json(const nlohmann::json& data, std::ostream& out = std::cout);
 
 // Output CSV row
 void output_csv_row(const std::vector<std::string>& values, std::ostream& out = std::cout);
@@ -74,3 +72,8 @@ void output_csv_header(const std::vector<std::string>& headers, std::ostream& ou
 void print_success(const std::string& message);
 void print_warning(const std::string& message);
 void print_error(const std::string& message);
+
+// Verbose mode
+[[nodiscard]] bool is_verbose() noexcept;
+void set_verbose(bool enabled) noexcept;
+void print_verbose(const std::string& message);

@@ -6,10 +6,8 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 // Build search body for POST /api/v1/contacts/search
-json build_contacts_search(
+nlohmann::json build_contacts_search(
     const std::optional<std::string>& q_keywords = std::nullopt,
     const std::optional<std::vector<std::string>>& contact_stage_ids = std::nullopt,
     const std::optional<std::string>& sort_by_field = std::nullopt,
@@ -26,7 +24,7 @@ json build_contacts_search(
 );
 
 // Build search body for POST /api/v1/accounts/search
-json build_accounts_search(
+nlohmann::json build_accounts_search(
     const std::optional<std::string>& q_keywords = std::nullopt,
     const std::optional<std::vector<std::string>>& account_stage_ids = std::nullopt,
     const std::optional<std::string>& sort_by_field = std::nullopt,
@@ -43,7 +41,7 @@ json build_accounts_search(
 // Build search body for POST /api/v1/tasks/search
 // Note: Tasks search uses query parameters, but we build a json object
 // for consistent handling; the caller sends them as query params.
-json build_tasks_search(
+nlohmann::json build_tasks_search(
     const std::optional<std::string>& sort_by_field = std::nullopt,
     int page = 1,
     int per_page = 25,
@@ -51,14 +49,14 @@ json build_tasks_search(
 );
 
 // Build search body for POST /api/v1/opportunities/search (deals)
-json build_deals_search(
+nlohmann::json build_deals_search(
     const std::optional<std::string>& sort_by_field = std::nullopt,
     int page = 1,
     int per_page = 25
 );
 
 // Build search body for POST /api/v1/emailer_campaigns/search (sequences)
-json build_sequences_search(
+nlohmann::json build_sequences_search(
     const std::optional<std::string>& q_keywords = std::nullopt,
     const std::optional<std::string>& sort_by_field = std::nullopt,
     bool sort_ascending = false,
@@ -70,7 +68,7 @@ json build_sequences_search(
 );
 
 // Build search body for POST /api/v1/emailer_messages/search (emails)
-json build_emails_search(
+nlohmann::json build_emails_search(
     const std::optional<std::string>& emailer_campaign_id = std::nullopt,
     const std::optional<std::string>& contact_id = std::nullopt,
     const std::optional<std::string>& status = std::nullopt,

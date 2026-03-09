@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(capollo VERSION 0.1.0 LANGUAGES CXX)
+project(apollo VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +29,7 @@ FetchContent_MakeAvailable(json cli11 tomlplusplus)
 find_package(CURL REQUIRED)
 find_package(SQLite3 REQUIRED)
 
-add_executable(capollo
+add_executable(apollo
     src/main.cpp
     src/core/http_client.cpp
     src/core/rest_client.cpp
@@ -40,6 +40,7 @@ add_executable(capollo
     src/core/error.cpp
     src/core/filter.cpp
     src/core/cache.cpp
+    src/core/resolver.cpp
     src/modules/contacts/api.cpp
     src/modules/contacts/commands.cpp
     src/modules/accounts/api.cpp
@@ -68,9 +69,9 @@ add_executable(capollo
     src/modules/cache/commands.cpp
 )
 
-target_include_directories(capollo PRIVATE src ${CMAKE_BINARY_DIR}/src)
+target_include_directories(apollo PRIVATE src ${CMAKE_BINARY_DIR}/src)
 
-target_link_libraries(capollo PRIVATE
+target_link_libraries(apollo PRIVATE
     nlohmann_json::nlohmann_json
     CLI11::CLI11
     tomlplusplus::tomlplusplus
@@ -78,7 +79,11 @@ target_link_libraries(capollo PRIVATE
     SQLite::SQLite3
 )
 
-install(TARGETS capollo DESTINATION bin)
+target_compile_options(apollo PRIVATE
+    -Wall -Wextra -Wpedantic -Wshadow
+)
+
+install(TARGETS apollo DESTINATION bin)
 
 enable_testing()
 add_subdirectory(tests)

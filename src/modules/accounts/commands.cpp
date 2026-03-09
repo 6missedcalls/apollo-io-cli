@@ -15,6 +15,7 @@
 #include "core/filter.h"
 #include "core/output.h"
 #include "core/paginator.h"
+#include "core/resolver.h"
 #include "core/rest_client.h"
 #include "modules/accounts/api.h"
 #include "modules/accounts/model.h"
@@ -28,6 +29,8 @@ using json = nlohmann::json;
 namespace {
 
 void render_account_table(const std::vector<Account>& accounts) {
+    const auto& r = resolve::get_resolver();
+
     if (get_output_format() == OutputFormat::Csv) {
         output_csv_header({"ID", "NAME", "DOMAIN", "PHONE", "STAGE", "OWNER"});
         for (const auto& acct : accounts) {
@@ -36,20 +39,20 @@ void render_account_table(const std::vector<Account>& accounts) {
                 acct.name,
                 acct.domain.value_or(""),
                 acct.phone.value_or(""),
-                acct.account_stage_id.value_or(""),
-                acct.owner_id.value_or("")
+                r.stage_name(acct.account_stage_id.value_or("")),
+                r.user_name(acct.owner_id.value_or(""))
             });
         }
         return;
     }
 
     TableRenderer table({
-        {"ID",     4, 12, false},
+        {"ID",     4, 26, false},
         {"NAME",   8, 25, false},
         {"DOMAIN", 4, 20, false},
         {"PHONE",  4, 15, false},
         {"STAGE",  4, 15, false},
-        {"OWNER",  4, 15, false}
+        {"OWNER",  4, 20, false}
     });
 
     for (const auto& acct : accounts) {
@@ -58,8 +61,8 @@ void render_account_table(const std::vector<Account>& accounts) {
             acct.name,
             acct.domain.value_or(""),
             acct.phone.value_or(""),
-            acct.account_stage_id.value_or(""),
-            acct.owner_id.value_or("")
+            r.stage_name(acct.account_stage_id.value_or("")),
+            r.user_name(acct.owner_id.value_or(""))
         });
     }
 
@@ -79,16 +82,16 @@ void render_account_json(const std::vector<Account>& accounts) {
         j["name"] = acct.name;
         j["domain"] = acct.domain.value_or("");
         j["phone"] = acct.phone.value_or("");
-        j["phoneStatus"] = acct.phone_status.value_or("");
-        j["sanitizedPhone"] = acct.sanitized_phone.value_or("");
-        j["ownerId"] = acct.owner_id.value_or("");
-        j["accountStageId"] = acct.account_stage_id.value_or("");
+        j["phone_status"] = acct.phone_status.value_or("");
+        j["sanitized_phone"] = acct.sanitized_phone.value_or("");
+        j["owner_id"] = acct.owner_id.value_or("");
+        j["account_stage_id"] = acct.account_stage_id.value_or("");
         j["source"] = acct.source.value_or("");
-        j["linkedinUrl"] = acct.linkedin_url.value_or("");
-        j["existenceLevel"] = acct.existence_level.value_or("");
-        j["labelIds"] = acct.label_ids;
-        j["createdAt"] = acct.created_at;
-        j["updatedAt"] = acct.updated_at;
+        j["linkedin_url"] = acct.linkedin_url.value_or("");
+        j["existence_level"] = acct.existence_level.value_or("");
+        j["label_ids"] = acct.label_ids;
+        j["created_at"] = acct.created_at;
+        j["updated_at"] = acct.updated_at;
         arr.push_back(j);
     }
     output_json(arr);
@@ -101,29 +104,31 @@ void render_account_detail(const Account& acct) {
         j["name"] = acct.name;
         j["domain"] = acct.domain.value_or("");
         j["phone"] = acct.phone.value_or("");
-        j["phoneStatus"] = acct.phone_status.value_or("");
-        j["sanitizedPhone"] = acct.sanitized_phone.value_or("");
-        j["ownerId"] = acct.owner_id.value_or("");
-        j["creatorId"] = acct.creator_id.value_or("");
-        j["accountStageId"] = acct.account_stage_id.value_or("");
-        j["teamId"] = acct.team_id.value_or("");
-        j["organizationId"] = acct.organization_id.value_or("");
+        j["phone_status"] = acct.phone_status.value_or("");
+        j["sanitized_phone"] = acct.sanitized_phone.value_or("");
+        j["owner_id"] = acct.owner_id.value_or("");
+        j["creator_id"] = acct.creator_id.value_or("");
+        j["account_stage_id"] = acct.account_stage_id.value_or("");
+        j["team_id"] = acct.team_id.value_or("");
+        j["organization_id"] = acct.organization_id.value_or("");
         j["source"] = acct.source.value_or("");
-        j["originalSource"] = acct.original_source.value_or("");
-        j["linkedinUrl"] = acct.linkedin_url.value_or("");
-        j["hubspotId"] = acct.hubspot_id.value_or("");
-        j["salesforceId"] = acct.salesforce_id.value_or("");
-        j["crmOwnerId"] = acct.crm_owner_id.value_or("");
-        j["parentAccountId"] = acct.parent_account_id.value_or("");
-        j["existenceLevel"] = acct.existence_level.value_or("");
-        j["labelIds"] = acct.label_ids;
-        j["typedCustomFields"] = acct.typed_custom_fields;
+        j["original_source"] = acct.original_source.value_or("");
+        j["linkedin_url"] = acct.linkedin_url.value_or("");
+        j["hubspot_id"] = acct.hubspot_id.value_or("");
+        j["salesforce_id"] = acct.salesforce_id.value_or("");
+        j["crm_owner_id"] = acct.crm_owner_id.value_or("");
+        j["parent_account_id"] = acct.parent_account_id.value_or("");
+        j["existence_level"] = acct.existence_level.value_or("");
+        j["label_ids"] = acct.label_ids;
+        j["typed_custom_fields"] = acct.typed_custom_fields;
         j["modality"] = acct.modality;
-        j["createdAt"] = acct.created_at;
-        j["updatedAt"] = acct.updated_at;
+        j["created_at"] = acct.created_at;
+        j["updated_at"] = acct.updated_at;
         output_json(j);
         return;
     }
+
+    const auto& r = resolve::get_resolver();
 
     DetailRenderer detail;
     detail.add_section(acct.name);
@@ -145,13 +150,13 @@ void render_account_detail(const Account& acct) {
     detail.add_blank_line();
 
     if (acct.owner_id.has_value()) {
-        detail.add_field("Owner ID", acct.owner_id.value());
+        detail.add_field("Owner", r.user_name(acct.owner_id.value_or("")));
     }
     if (acct.creator_id.has_value()) {
-        detail.add_field("Creator ID", acct.creator_id.value());
+        detail.add_field("Creator", r.user_name(acct.creator_id.value_or("")));
     }
     if (acct.account_stage_id.has_value()) {
-        detail.add_field("Account Stage", acct.account_stage_id.value());
+        detail.add_field("Stage", r.stage_name(acct.account_stage_id.value_or("")));
     }
     if (acct.team_id.has_value()) {
         detail.add_field("Team ID", acct.team_id.value());
@@ -188,12 +193,7 @@ void render_account_detail(const Account& acct) {
     }
 
     if (!acct.label_ids.empty()) {
-        std::string labels;
-        for (size_t i = 0; i < acct.label_ids.size(); ++i) {
-            if (i > 0) labels += ", ";
-            labels += acct.label_ids[i];
-        }
-        detail.add_field("Labels", labels);
+        detail.add_field("Labels", r.label_names(acct.label_ids));
     }
 
     if (!acct.typed_custom_fields.is_null() && !acct.typed_custom_fields.empty()) {
@@ -323,6 +323,7 @@ void accounts_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -341,6 +342,7 @@ void accounts_commands::register_commands(CLI::App& app) {
                 render_account_detail(account);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -383,10 +385,13 @@ void accounts_commands::register_commands(CLI::App& app) {
                 input.append_label_names = opts->labels;
 
                 auto account = accounts_api::create_account(input);
-                print_success("Created account: " + account.name + " (" + account.id + ")");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Created account: " + account.name + " (" + account.id + ")");
+                }
                 render_account_detail(account);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -431,10 +436,13 @@ void accounts_commands::register_commands(CLI::App& app) {
                 input.append_label_names = opts->labels;
 
                 auto account = accounts_api::update_account(opts->id, input);
-                print_success("Updated account: " + account.name + " (" + account.id + ")");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Updated account: " + account.name + " (" + account.id + ")");
+                }
                 render_account_detail(account);
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -452,7 +460,15 @@ void accounts_commands::register_commands(CLI::App& app) {
                 accounts_api::delete_account(*account_id);
                 print_success("Deleted account: " + *account_id);
             } catch (const ApolloError& e) {
-                print_error(format_error(e));
+                if (e.kind() == ErrorKind::NotFound) {
+                    print_error("Account " + *account_id + " not found. "
+                        "Note: this endpoint requires a master API key.");
+                } else if (e.kind() == ErrorKind::Forbidden) {
+                    print_error("Master API key required to delete accounts.");
+                } else {
+                    print_error(format_error(e));
+                }
+                throw;
             }
         });
     }
@@ -537,7 +553,9 @@ void accounts_commands::register_commands(CLI::App& app) {
 
                 auto created = accounts_api::bulk_create(inputs, opts->dedupe);
 
-                print_success("Created " + std::to_string(created.size()) + " account(s)");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Created " + std::to_string(created.size()) + " account(s)");
+                }
 
                 if (get_output_format() == OutputFormat::Json) {
                     render_account_json(created);
@@ -546,6 +564,7 @@ void accounts_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }
@@ -583,13 +602,16 @@ void accounts_commands::register_commands(CLI::App& app) {
                     count = static_cast<int>(response["accounts"].size());
                 }
 
-                print_success("Updated ownership for " + std::to_string(count) + " account(s)");
+                if (get_output_format() != OutputFormat::Json) {
+                    print_success("Updated ownership for " + std::to_string(count) + " account(s)");
+                }
 
                 if (get_output_format() == OutputFormat::Json) {
                     output_json(response);
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             }
         });
     }

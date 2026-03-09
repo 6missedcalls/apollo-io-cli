@@ -3,17 +3,22 @@
 #include "core/color.h"
 
 #include <algorithm>
+#include <charconv>
 #include <cstdlib>
+#include <cstring>
 #include <sstream>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+using json = nlohmann::json;
 
 // ---------------------------------------------------------------------------
 // Global output format
 // ---------------------------------------------------------------------------
 
 static OutputFormat g_format = OutputFormat::Table;
+static bool g_verbose = false;
 
 OutputFormat get_output_format() noexcept {
     return g_format;
@@ -65,8 +70,9 @@ int TableRenderer::terminal_width() const {
 
     const char* env_cols = std::getenv("COLUMNS");
     if (env_cols != nullptr) {
-        int cols = std::atoi(env_cols);
-        if (cols > 0) {
+        int cols = 0;
+        auto [ptr, ec] = std::from_chars(env_cols, env_cols + std::strlen(env_cols), cols);
+        if (ec == std::errc{} && cols > 0) {
             return cols;
         }
     }
@@ -403,4 +409,15 @@ void print_error(const std::string& message) {
     } else {
         std::cerr << "[ERROR] " << message << "\n";
     }
+}
+
+// ---------------------------------------------------------------------------
+// Verbose mode
+// ---------------------------------------------------------------------------
+
+bool is_verbose() noexcept { return g_verbose; }
+void set_verbose(bool enabled) noexcept { g_verbose = enabled; }
+void print_verbose(const std::string& message) {
+    if (!g_verbose) return;
+    std::cerr << color::gray("[debug] ") << message << "\n";
 }

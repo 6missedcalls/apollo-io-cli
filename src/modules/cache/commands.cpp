@@ -10,6 +10,9 @@
 #include "core/cache.h"
 #include "core/error.h"
 #include "core/output.h"
+#include "modules/labels/api.h"
+#include "modules/stages/api.h"
+#include "modules/users/api.h"
 
 using json = nlohmann::json;
 
@@ -79,6 +82,7 @@ void cache_commands::register_commands(CLI::App& app) {
                 print_success("Cache cleared.");
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             } catch (const std::exception& e) {
                 print_error(std::string("Failed to clear cache: ") + e.what());
                 throw std::runtime_error(std::string("Cache clear failed: ") + e.what());
@@ -97,7 +101,8 @@ void cache_commands::register_commands(CLI::App& app) {
                 auto& c = cache::get_cache();
 
                 const std::vector<std::string> table_names = {
-                    "users", "labels", "fields"
+                    "users", "labels", "fields",
+                    "stages_contact", "stages_account", "stages_deal"
                 };
 
                 std::vector<TableStatus> statuses;
@@ -120,6 +125,18 @@ void cache_commands::register_commands(CLI::App& app) {
                         auto records = c.get_fields();
                         status.record_count = records.size();
                         status.is_empty = records.empty();
+                    } else if (name == "stages_contact") {
+                        auto records = c.get_stages("contact");
+                        status.record_count = records.size();
+                        status.is_empty = records.empty();
+                    } else if (name == "stages_account") {
+                        auto records = c.get_stages("account");
+                        status.record_count = records.size();
+                        status.is_empty = records.empty();
+                    } else if (name == "stages_deal") {
+                        auto records = c.get_stages("deal");
+                        status.record_count = records.size();
+                        status.is_empty = records.empty();
                     }
 
                     statuses.push_back(std::move(status));
@@ -132,9 +149,96 @@ void cache_commands::register_commands(CLI::App& app) {
                 }
             } catch (const ApolloError& e) {
                 print_error(format_error(e));
+                throw;
             } catch (const std::exception& e) {
                 print_error(std::string("Failed to read cache status: ") + e.what());
                 throw std::runtime_error(std::string("Cache status failed: ") + e.what());
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // cache refresh
+    // -----------------------------------------------------------------------
+    {
+        auto* cmd = cache_cmd->add_subcommand("refresh", "Force refresh all cached data");
+
+        cmd->callback([]() {
+            try {
+                auto& c = cache::get_cache();
+
+                // Refresh users
+                auto users = users_api::list_users();
+                std::vector<cache::CachedUser> cached_users;
+                cached_users.reserve(users.size());
+                for (const auto& u : users) {
+                    cached_users.push_back({u.id, u.name, u.email});
+                }
+                c.store_users(cached_users);
+
+                // Refresh stages (all 3 types)
+                auto contact_stages = stages_api::list_contact_stages();
+                std::vector<cache::CachedStage> cs;
+                cs.reserve(contact_stages.size());
+                for (const auto& s : contact_stages) {
+                    cs.push_back({
+                        s.id,
+                        s.display_name.empty() ? s.name : s.display_name,
+                        "contact",
+                        s.display_order
+                    });
+                }
+                c.store_stages(cs, "contact");
+
+                auto account_stages = stages_api::list_account_stages();
+                std::vector<cache::CachedStage> as;
+                as.reserve(account_stages.size());
+                for (const auto& s : account_stages) {
+                    as.push_back({
+                        s.id,
+                        s.display_name.empty() ? s.name : s.display_name,
+                        "account",
+                        s.display_order
+                    });
+                }
+                c.store_stages(as, "account");
+
+                auto deal_stages = stages_api::list_deal_stages();
+                std::vector<cache::CachedStage> ds;
+                ds.reserve(deal_stages.size());
+                for (const auto& s : deal_stages) {
+                    ds.push_back({
+                        s.id,
+                        s.display_name.empty() ? s.name : s.display_name,
+                        "deal",
+                        s.display_order
+                    });
+                }
+                c.store_stages(ds, "deal");
+
+                // Refresh labels
+                auto labels = labels_api::list_labels();
+                std::vector<cache::CachedLabel> cl;
+                cl.reserve(labels.size());
+                for (const auto& l : labels) {
+                    cl.push_back({l.id, l.name, l.modality});
+                }
+                c.store_labels(cl);
+
+                print_success(
+                    "Cache refreshed: "
+                    + std::to_string(cached_users.size()) + " users, "
+                    + std::to_string(cs.size()) + " contact stages, "
+                    + std::to_string(as.size()) + " account stages, "
+                    + std::to_string(ds.size()) + " deal stages, "
+                    + std::to_string(cl.size()) + " labels"
+                );
+            } catch (const ApolloError& e) {
+                print_error(format_error(e));
+                throw;
+            } catch (const std::exception& e) {
+                print_error(std::string("Failed to refresh cache: ") + e.what());
+                throw std::runtime_error(std::string("Cache refresh failed: ") + e.what());
             }
         });
     }

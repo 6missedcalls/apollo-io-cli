@@ -5,8 +5,6 @@
 
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 struct Deal {
     std::string id;
     std::string name;
@@ -21,12 +19,12 @@ struct Deal {
     std::optional<std::string> source;
     std::optional<std::string> description;
     std::optional<std::string> team_id;
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
     std::string created_at;
     std::string updated_at;
 };
 
-inline void from_json(const json& j, Deal& d) {
+inline void from_json(const nlohmann::json& j, Deal& d) {
     auto safe_str = [&](const char* key, const std::string& def = "") -> std::string {
         if (j.contains(key) && !j[key].is_null()) return j[key].get<std::string>();
         return def;
@@ -63,7 +61,7 @@ inline void from_json(const json& j, Deal& d) {
     if (j.contains("typed_custom_fields") && !j["typed_custom_fields"].is_null()) {
         d.typed_custom_fields = j["typed_custom_fields"];
     } else {
-        d.typed_custom_fields = json::object();
+        d.typed_custom_fields = nlohmann::json::object();
     }
 }
 
@@ -74,11 +72,11 @@ struct DealCreateInput {
     std::optional<double> amount;
     std::optional<std::string> opportunity_stage_id;
     std::optional<std::string> closed_date;
-    json typed_custom_fields;
+    nlohmann::json typed_custom_fields;
 };
 
-inline json to_json_body(const DealCreateInput& input) {
-    json body = json::object();
+inline nlohmann::json to_json_body(const DealCreateInput& input) {
+    nlohmann::json body = nlohmann::json::object();
 
     if (!input.name.empty()) {
         body["name"] = input.name;

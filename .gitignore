@@ -5,3 +5,5 @@ build/
 *.a
 *.dylib
 compile_commands.json
+docs/raw_files/
+dist/
