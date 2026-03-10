@@ -1,8 +1,19 @@
-# apollo
+<p align="center">
+  <img src="https://img.shields.io/badge/C%2B%2B-20-blue?style=flat-square&logo=cplusplus" alt="C++20">
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
+</p>
 
-Apollo.io CLI for humans and AI agents.
+<p align="center">
+  <img src="https://www.6missedcalls.com/api/og?title=apollo&subtitle=Apollo.io%20CLI%20for%20humans%20and%20AI%20agents&tag=Open%20Source&footer=github.com/6missedcalls/apollo-io-cli" alt="apollo" width="800">
+</p>
 
-A fast, single-binary command-line client for the Apollo.io REST API. Manage contacts, accounts, deals, sequences, and more from your terminal -- or hand it to an AI agent with `--json` for structured output.
+<h3 align="center">Fast, single-binary CLI for <a href="https://apollo.io">Apollo.io</a></h3>
+
+<p align="center">
+  Manage contacts, accounts, deals, sequences, and more from your terminal.<br>
+  12 modules &middot; 35 endpoints &middot; JSON output for AI agents &middot; <code>brew install apollo</code>
+</p>
 
 ## Quick start
 
